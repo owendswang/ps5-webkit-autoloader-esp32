@@ -1,0 +1,233 @@
+* {
+  margin: 0;
+  padding: 0;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  background: #0f172a;
+  background: -webkit-linear-gradient(180deg, #0f172a 0%, #0b1220 100%);
+  color: #e2e8f0;
+  min-height: 100%;
+  overflow: hidden;
+}
+
+#footer {
+  position: fixed;
+  bottom: 12px;
+  left: 50%;
+  -webkit-transform: translateX(-50%);
+  transform: translateX(-50%);
+  font-size: 0.75rem;
+  color: #4b5563;
+  line-height: 1.5;
+  text-align: center;
+  z-index: 20;
+}
+
+
+
+/* Splash screen: shown before the loader, animate out once at startup */
+#splash {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 30;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+  -webkit-flex-direction: column;
+  flex-direction: column;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-box-pack: center;
+  -webkit-justify-content: center;
+  justify-content: center;
+  background: #0f172a;
+  background: -webkit-linear-gradient(180deg, #0f172a 0%, #0b1220 100%);
+  opacity: 1;
+  -webkit-transition: opacity 0.45s ease-in, visibility 0s linear 0.45s;
+  transition: opacity 0.45s ease-in, visibility 0s linear 0.45s;
+}
+
+#splash.hide {
+  opacity: 0;
+  visibility: hidden;
+  -webkit-transition: opacity 0.45s ease-in, visibility 0s linear 0.45s;
+  transition: opacity 0.45s ease-in, visibility 0s linear 0.45s;
+}
+
+#splash .logo {
+  width: 11rem;
+  height: 11rem;
+  -webkit-animation: splash-in 0.8s ease-out both;
+  animation: splash-in 0.8s ease-out both;
+}
+
+#splash h1 {
+  margin-top: 1.75rem;
+  font-size: 2.5rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #e2e8f0;
+  -webkit-animation: splash-in 0.8s ease-out 0.15s both;
+  animation: splash-in 0.8s ease-out 0.15s both;
+}
+
+@-webkit-keyframes splash-in {
+  from {
+    opacity: 0;
+    -webkit-transform: translateY(10px);
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    -webkit-transform: translateY(0);
+    transform: translateY(0);
+  }
+}
+
+@keyframes splash-in {
+  from {
+    opacity: 0;
+    -webkit-transform: translateY(10px);
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    -webkit-transform: translateY(0);
+    transform: translateY(0);
+  }
+}
+
+
+
+/* Loader UI: centered; the bottom-right iframe just floats over it */
+#loader {
+  position: relative;
+  z-index: 10;
+  height: 100%;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+  -webkit-flex-direction: column;
+  flex-direction: column;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-box-pack: center;
+  -webkit-justify-content: center;
+  justify-content: center;
+  background: #0f172a;
+  background: -webkit-linear-gradient(180deg, #0f172a 0%, #0b1220 100%);
+}
+
+main[hidden] {
+  display: none !important;
+}
+
+#logWrapper {
+  width: 82%;
+  height: 72%;
+  max-width: 1220px;
+  background: #05070d;
+  border: 1px solid #1e3a5f;
+  border-radius: 10px;
+  overflow-y: auto;
+  font-family: "SFMono-Regular", Menlo, Monaco, "Cascadia Mono", monospace;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  padding: 1rem 1.25rem;
+}
+
+#logContainer {
+  color: #94a3b8;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+#logContainer .line {
+  white-space: pre-wrap;
+  margin-bottom: 0.25rem;
+}
+
+#logContainer .info {
+  color: #94a3b8;
+}
+
+#logContainer .success {
+  color: #7df966;
+}
+
+#logContainer .warning {
+  color: #fbbf24;
+}
+
+#logContainer .error {
+  color: #f87171;
+}
+
+#progressContainer {
+  position: relative;
+  width: 82%;
+  max-width: 1220px;
+  height: 3rem;
+  margin-top: 1.75rem;
+  background: #1b2436;
+  border: 1px solid #2c3e5a;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+#progressBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  background: #38bdf8;
+  background: -webkit-linear-gradient(90deg, #2563eb 0%, #38bdf8 100%);
+  -webkit-transform: scaleX(0);
+  transform: scaleX(0);
+  -webkit-transform-origin: left center;
+  transform-origin: left center;
+  -webkit-transition: -webkit-transform 0.5s ease-in-out;
+  transition: transform 0.5s ease-in-out;
+}
+
+#progressLabel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-box-pack: center;
+  -webkit-justify-content: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  z-index: 1;
+  pointer-events: none;
+}

@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en" manifest="/cache.appcache">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <title>WebKit Autoloader Installer v[[VERSION_PLACEHOLDER]] by PLK (built [[BUILD_TIME_PLACEHOLDER]])</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      -webkit-box-sizing: border-box;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      font-family: -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
+      background: #0f172a;
+      background: -webkit-linear-gradient(180deg, #0f172a 0%, #0b1220 100%);
+      color: #e2e8f0;
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-box-pack: center;
+      -webkit-justify-content: center;
+      justify-content: center;
+      min-height: 100%;
+      text-align: center;
+    }
+
+    #footer {
+      position: fixed;
+      bottom: 12px;
+      left: 50%;
+      -webkit-transform: translateX(-50%);
+      transform: translateX(-50%);
+      font-size: 0.75rem;
+      color: #4b5563;
+      line-height: 1.5;
+      text-align: center;
+      z-index: 20;
+    }
+
+
+
+    main {
+      max-width: 42rem;
+      padding: 2rem;
+    }
+
+    .logo {
+      display: inline-block;
+      width: 8rem;
+      height: 8rem;
+      margin-bottom: 2rem;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      margin-bottom: 1rem;
+    }
+
+    p {
+      font-size: 1.375rem;
+      line-height: 1.5;
+      color: #94a3b8;
+    }
+
+    #status {
+      font-size: 1.5rem;
+      font-weight: 500;
+      color: #38bdf8;
+      margin-bottom: 0.5rem;
+    }
+
+    #progressWrap {
+      position: relative;
+      width: 100%;
+      max-width: 30rem;
+      height: 1.25rem;
+      margin: 1.75rem auto 0;
+      background: #1b2436;
+      border: 1px solid #2c3e5a;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    #progressBar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 100%;
+      background: #38bdf8;
+      background: -webkit-linear-gradient(90deg, #2563eb 0%, #38bdf8 100%);
+      -webkit-transform: scaleX(0);
+      transform: scaleX(0);
+      -webkit-transform-origin: left center;
+      transform-origin: left center;
+      -webkit-transition: -webkit-transform 0.3s ease-out;
+      transition: transform 0.3s ease-out;
+    }
+
+    #progressPct {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-box-pack: center;
+      -webkit-justify-content: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+      z-index: 1;
+      pointer-events: none;
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <img class="logo" src="/logo.svg" alt="WebKit Autoloader" />
+    <h1>WebKit Autoloader Installer</h1>
+    <p id="status">Loading&hellip;</p>
+    <p id="detail"></p>
+    <div id="progressWrap" hidden>
+      <div id="progressBar"></div>
+      <div id="progressPct">0%</div>
+    </div>
+  </main>
+
+  <footer id="footer">WebKit Autoloader Installer v[[VERSION_PLACEHOLDER]] by PLK (built [[BUILD_TIME_PLACEHOLDER]])<br />This project is free and open source: github.com/itsPLK/ps5-webkit-autoloader</footer>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var statusEl = document.getElementById('status');
+      var detailEl = document.getElementById('detail');
+      var progressWrap = document.getElementById('progressWrap');
+      var progressBar = document.getElementById('progressBar');
+      var progressPct = document.getElementById('progressPct');
+      var completed = false;
+
+      var AUTOLOADER_URL = '/app/index.html';
+
+      function setProgress(pct) {
+        progressBar.style.transform = 'scaleX(' + pct / 100 + ')';
+        progressPct.textContent = pct + '%';
+      }
+
+      function setCaching() {
+        statusEl.textContent = 'Caching content...';
+        detailEl.textContent = 'Please wait a moment. Do not close this page yet!';
+        progressWrap.hidden = false;
+      }
+
+      function goToAutoloader() {
+        if (completed) {
+          return;
+        }
+        completed = true;
+        statusEl.textContent = 'Cache complete';
+        detailEl.textContent = 'Starting WebKit Autoloader...';
+        progressWrap.hidden = false;
+        setProgress(100);
+        window.location.replace(AUTOLOADER_URL);
+      }
+
+      function cacheFailed() {
+        statusEl.textContent = 'Cache failed';
+        detailEl.textContent = 'Keep the ESP network connected, then reload this page to try again.';
+      }
+
+      window.addEventListener('load', function () {
+        if (!window.applicationCache) {
+          cacheFailed();
+          return;
+        }
+
+        /* If this page was loaded from an already-current AppCache, the
+           noupdate event may have fired before window.load. IDLE is safe to
+           enter: it means there is no cache download still in progress. */
+        if (window.applicationCache.status === window.applicationCache.IDLE) {
+          goToAutoloader();
+        } else {
+          setCaching();
+        }
+      });
+
+      if (window.applicationCache) {
+        window.applicationCache.addEventListener('checking', function () {
+          progressWrap.hidden = false;
+        });
+        window.applicationCache.addEventListener('progress', function (e) {
+          if (e.total && e.total > 0) {
+            var pct = Math.min(99, Math.round((e.loaded / e.total) * 100));
+            setProgress(pct);
+          }
+        });
+        window.applicationCache.addEventListener('cached', goToAutoloader);
+        window.applicationCache.addEventListener('noupdate', goToAutoloader);
+        window.applicationCache.addEventListener('updateready', function () {
+          if (window.applicationCache.status === window.applicationCache.UPDATEREADY) {
+            window.applicationCache.swapCache();
+          }
+          goToAutoloader();
+        });
+        window.applicationCache.addEventListener('error', cacheFailed);
+      }
+    })();
+  </script>
+</body>
+
+</html>

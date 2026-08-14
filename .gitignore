@@ -1,0 +1,11 @@
+/build
+/data
+/server.crt
+/server.key
+/server_certs.h
+__pycache__/
+*.pyc
+*.bin
+*.elf
+*.bak
+/slopkit.*
