@@ -4,6 +4,18 @@ A compact HTTP/HTTPS host for the PS5 WebKit Autoloader, packaged as 4 MB flash 
 
 The web content in `autoloader/` is based on a modified version of the [`ps5-webkit-autoloader`](https://github.com/itsPLK/ps5-webkit-autoloader) frontend. Its bundled [`slopkit`](https://github.com/jordyidk/slopkit) and [`ps5-unified-autoloader`](https://github.com/itsPLK/ps5-unified-autoloader) components also contain project-specific modifications and therefore do not exactly match upstream.
 
+## Usage
+
+1. Plug the ESP32 into the PS5 and turn on the console.
+2. Connect the PS5 to the `ESP32_PORTAL` Wi-Fi network using the password `12345678`.
+3. Open **Settings → Guide & Tips ... → Guide & Tips → User's Guide**.
+4. Wait for the installation and caching process to finish. Do not disconnect the ESP32 while it is still running.
+5. On success, Payload Manager opens automatically and a **WebKit Autoloader** shortcut appears in the **Media** section of the home screen.
+
+After a successful installation, the web content is cached on the PS5 and the ESP32 is no longer required. On subsequent boots, launch **WebKit Autoloader** directly from the Media section.
+
+If an attempt fails, follow the on-screen instruction to reboot and try again. If the console freezes, crashes, or powers off, turn it back on and retry. Use this project at your own risk.
+
 ## Requirements
 
 - Arduino CLI
