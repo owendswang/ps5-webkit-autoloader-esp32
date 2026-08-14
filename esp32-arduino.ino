@@ -13,7 +13,7 @@ httpd_handle_t httpsServer = NULL;
 
 static const char *AP_SSID = "ESP32_PORTAL";
 static const char *AP_PASSWORD = "12345678";
-static const char *PORTAL_REDIRECT_URL = "http://192.168.4.1/?v=v0.2.1-202608141319";
+static const char *PORTAL_REDIRECT_URL = "http://192.168.4.1/?v=0.2.1-202608141906";
 
 static const IPAddress AP_IP(192, 168, 4, 1);
 static const IPAddress AP_GATEWAY(192, 168, 4, 1);

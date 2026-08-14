@@ -16,6 +16,7 @@ CERT_EMBEDDER := $(PROJECT_DIR)/embed_cert.py
 COMMON_BUILD_DIR := $(BUILD_DIR)/common
 PICO_BUILD_DIR := $(BUILD_DIR)/pico
 S2_BUILD_DIR := $(BUILD_DIR)/s2
+S3_BUILD_DIR := $(BUILD_DIR)/s3
 C3_BUILD_DIR := $(BUILD_DIR)/c3
 PICO_8M_BUILD_DIR := $(BUILD_DIR)/pico-8m
 PICO_8M_SKETCH_DIR := $(PICO_8M_BUILD_DIR)/sketch/$(PROJECT_NAME)
@@ -30,6 +31,7 @@ LITTLEFS_TOOL := $(shell find "$(ARDUINO_ROOT)/tools" -name mklittlefs -type f 2
 
 PICO_FQBN := esp32:esp32:esp32:CPUFreq=240,FlashFreq=40,FlashMode=dio,FlashSize=4M,DebugLevel=verbose,PSRAM=disabled
 S2_FQBN := esp32:esp32:esp32s2:CDCOnBoot=cdc,MSCOnBoot=default,DFUOnBoot=default,UploadMode=default,CPUFreq=240,FlashFreq=40,FlashMode=dio,FlashSize=4M,DebugLevel=verbose,PSRAM=disabled
+S3_FQBN := esp32:esp32:esp32s3:USBMode=hwcdc,CDCOnBoot=cdc,MSCOnBoot=default,DFUOnBoot=default,UploadMode=default,CPUFreq=240,FlashMode=dio,FlashSize=4M,DebugLevel=verbose,PSRAM=disabled
 PICO_8M_FQBN := esp32:esp32:esp32:CPUFreq=240,FlashFreq=40,FlashMode=dio,FlashSize=8M,DebugLevel=verbose,PSRAM=disabled
 C3_FQBN := esp32:esp32:esp32c3:CDCOnBoot=cdc,CPUFreq=160,FlashFreq=40,FlashMode=dio,FlashSize=4M,DebugLevel=verbose
 
@@ -51,6 +53,10 @@ S2_APP := $(S2_BUILD_DIR)/$(PROJECT_NAME).ino.bin
 S2_BOOTLOADER := $(S2_BUILD_DIR)/$(PROJECT_NAME).ino.bootloader.bin
 S2_PARTITIONS := $(S2_BUILD_DIR)/$(PROJECT_NAME).ino.partitions.bin
 S2_MERGED := $(S2_BUILD_DIR)/$(PROJECT_NAME).s2.merged.bin
+S3_APP := $(S3_BUILD_DIR)/$(PROJECT_NAME).ino.bin
+S3_BOOTLOADER := $(S3_BUILD_DIR)/$(PROJECT_NAME).ino.bootloader.bin
+S3_PARTITIONS := $(S3_BUILD_DIR)/$(PROJECT_NAME).ino.partitions.bin
+S3_MERGED := $(S3_BUILD_DIR)/$(PROJECT_NAME).s3.merged.bin
 PICO_8M_LITTLEFS_IMAGE := $(PICO_8M_BUILD_DIR)/$(PROJECT_NAME).littlefs.bin
 PICO_8M_APP := $(PICO_8M_OUTPUT_DIR)/$(PROJECT_NAME).ino.bin
 PICO_8M_BOOTLOADER := $(PICO_8M_OUTPUT_DIR)/$(PROJECT_NAME).ino.bootloader.bin
@@ -61,12 +67,12 @@ C3_BOOTLOADER := $(C3_BUILD_DIR)/$(PROJECT_NAME).ino.bootloader.bin
 C3_PARTITIONS := $(C3_BUILD_DIR)/$(PROJECT_NAME).ino.partitions.bin
 C3_MERGED := $(C3_BUILD_DIR)/$(PROJECT_NAME).c3.merged.bin
 
-.PHONY: all pico pico-8m s2 c3 check clean FORCE
+.PHONY: all pico pico-8m s2 s3 c3 check clean FORCE
 
-all: check $(PICO_MERGED) $(S2_MERGED)
+all: check $(PICO_MERGED) $(S2_MERGED) $(S3_MERGED) $(C3_MERGED)
 	@echo
 	echo "Build complete:"
-	ls -lh "$(PICO_MERGED)" "$(S2_MERGED)" "$(LITTLEFS_IMAGE)"
+	ls -lh "$(PICO_MERGED)" "$(S2_MERGED)" $(S3_MERGED) $(C3_MERGED) "$(LITTLEFS_IMAGE)"
 
 pico: check $(PICO_MERGED)
 	@ls -lh "$(PICO_MERGED)"
@@ -76,6 +82,9 @@ pico-8m: check $(PICO_8M_MERGED)
 
 s2: check $(S2_MERGED)
 	@ls -lh "$(S2_MERGED)"
+
+s3: check $(S3_MERGED)
+	@ls -lh "$(S3_MERGED)"
 
 c3: check $(C3_MERGED)
 	@ls -lh "$(C3_MERGED)"
@@ -131,6 +140,17 @@ $(S2_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(SERVER_HEADER) $(PROJECT_DIR)/pa
 	    "$(PROJECT_DIR)"
 	size=$$(stat -c %s "$(S2_APP)")
 	test "$$size" -le "$(APP_PARTITION_SIZE)" || { echo "Error: S2 application exceeds the 1 MB partition: $$size bytes" >&2; exit 1; }
+
+$(S3_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(SERVER_HEADER) $(PROJECT_DIR)/partitions.csv Makefile
+	@mkdir -p "$(S3_BUILD_DIR)"
+	arduino-cli compile \
+	    --fqbn "$(S3_FQBN)" \
+	    --output-dir "$(S3_BUILD_DIR)" \
+	    --build-property "build.partitions=partitions" \
+	    --build-property "build.filesystem=littlefs" \
+	    "$(PROJECT_DIR)"
+	size=$$(stat -c %s "$(S3_APP)")
+	test "$$size" -le "$(APP_PARTITION_SIZE)" || { echo "Error: S3 application exceeds the 1 MB partition: $$size bytes" >&2; exit 1; }
 
 $(PICO_8M_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(SERVER_HEADER) $(PROJECT_DIR)/partitions-8m.csv Makefile
 	@rm -rf "$(PICO_8M_SKETCH_DIR)" "$(PICO_8M_OUTPUT_DIR)"
@@ -222,6 +242,26 @@ $(S2_MERGED): $(S2_APP) $(LITTLEFS_IMAGE)
 	    head -c "$$padding" /dev/zero | tr '\000' '\377' >> "$(S2_MERGED)"
 	fi
 	test "$$(stat -c %s "$(S2_MERGED)")" -eq "$(FLASH_SIZE)"
+
+$(S3_MERGED): $(S3_APP) $(LITTLEFS_IMAGE)
+	@python3 "$(ESPTOOL)" \
+	    --chip esp32s3 \
+	    merge_bin \
+	    -o "$(S3_MERGED)" \
+	    --flash_mode dio \
+	    --flash_freq 80m \
+	    --flash_size 4MB \
+	    0x0 "$(S3_BOOTLOADER)" \
+	    0x8000 "$(S3_PARTITIONS)" \
+	    0x10000 "$(S3_APP)" \
+	    "$(LITTLEFS_OFFSET)" "$(LITTLEFS_IMAGE)"
+	size=$$(stat -c %s "$(S3_MERGED)")
+	test "$$size" -le "$(FLASH_SIZE)" || { echo "Error: S3 image exceeds 4 MB: $$size bytes" >&2; exit 1; }
+	if [ "$$size" -lt "$(FLASH_SIZE)" ]; then
+	    padding=$$(($(FLASH_SIZE) - size))
+	    head -c "$$padding" /dev/zero | tr '\000' '\377' >> "$(S3_MERGED)"
+	fi
+	test "$$(stat -c %s "$(S3_MERGED)")" -eq "$(FLASH_SIZE)"
 
 $(C3_MERGED): $(C3_APP) $(LITTLEFS_IMAGE)
 	@python3 "$(ESPTOOL)" \
