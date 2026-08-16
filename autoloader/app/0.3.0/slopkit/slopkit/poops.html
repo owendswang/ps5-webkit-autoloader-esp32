@@ -139,8 +139,6 @@
         box-shadow: 0 18px 42px rgba(0,0,0,.34), inset 0 1px rgba(255,255,255,.04);
         border-radius: 14px; padding: 13px 15px; margin: 10px auto 0; }
 
-  body.loader-ready #scr { display:none; }
-
   body.quiet tr:not(.r-FAIL) td.d .note   { display: none; }
 
   body.quiet tr:not(.r-FAIL) td.d > span:first-child {
@@ -153,59 +151,249 @@
     font-size:25px; font-weight:800; text-align:center; letter-spacing:.02em; }
   #failureMessage.on { display:block; }
 
-  body.loader-ready { justify-content:flex-start; overflow-y:auto; padding-top:22px; }
-  body.loader-ready #nav { display:none !important; }
-  #payloadMenu { display:none; width:1356px; max-width:94vw; margin:4px auto 24px; }
-  #payloadMenu.on { display:block; }
-  #payloadMenu .payloadGrid { display:flex; flex-wrap:wrap;
-    justify-content:center; }
-  #payloadMenu .payloadTile {
-    box-sizing:border-box; display:block; flex:0 0 calc(25% - 12px);
-    width:330px; min-width:0; max-width:330px; margin:6px; padding:0;
-    border:0; border-radius:13px;
-    background:transparent; text-decoration:none !important;
+  #main-content {
+    position:relative; min-width:0; min-height:0; width:100%; height:100%;
+    overflow:hidden; box-sizing:border-box;
   }
-  #payloadMenu .payloadTile:focus { outline:3px solid #fff; outline-offset:2px; }
-  #payloadMenu .payloadTile img { display:block; width:330px; height:72px;
-    max-width:100%; margin:0 auto; }
-  #payloadMenu .payloadTile.busy { opacity:.42; }
+  #main-content > .app-view {
+    position:absolute; top:0; left:0; width:100%; height:100%;
+    box-sizing:border-box; opacity:0; pointer-events:none;
+    transition:opacity .3s ease-in-out;
+  }
+  #main-content > .app-view.selected {
+    opacity:1 !important; pointer-events:auto !important;
+  }
+  #console-view {
+    display:flex; flex-direction:column; align-items:stretch; overflow:hidden;
+  }
+  #payloads-view {
+    display:grid !important; grid-template-rows:auto 1fr;
+    overflow:hidden; background:#0c0c0f; color:#fff;
+  }
+  #prompt-view {
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden; background:#0c0c0f; color:#fff;
+  }
+  .payloadHeader {
+    position:relative; box-sizing:border-box; min-height:112px;
+    padding:.5rem; text-align:center;
+  }
+  .payloadHeader h2 {
+    margin:.35rem 0; color:#fff; font-size:2rem; line-height:1.2;
+  }
+  .payloadEyebrow { color:#ccc; font-size:1rem; }
+  .payloadHeader p { margin:0; color:#ccc; font-size:.9rem; }
+  .homeLink {
+    position:absolute; top:.75rem; right:1rem; padding:.5rem 1rem;
+    border-radius:1rem; color:#fff; background:#202125;
+    text-decoration:none; font-size:1rem;
+  }
+  .homeLink:hover, .homeLink:focus {
+    outline:0; background:#a2a2a6; color:#202020;
+  }
+
+  #payloads-view .payloadGrid {
+    display:grid !important;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-auto-rows:auto;
+    column-gap:2.5rem;
+    row-gap:1rem;
+    width:100%;
+    height:auto; min-height:0;
+    padding:0 2rem 2rem 2rem;
+    overflow-y:scroll;
+    overflow-x:hidden;
+    box-sizing:border-box;
+    align-content:start;
+  }
+  #payloads-view .btn {
+    display:inline-block;
+    box-sizing:border-box;
+    width:100%;
+    min-width:5rem;
+    margin:.2rem;
+    padding:1rem 2rem;
+    border:0;
+    border-radius:1.25rem;
+    background:#202125;
+    color:#fff;
+    cursor:pointer;
+    line-height:2.5rem;
+    text-align:center;
+    text-decoration:none;
+    font-size:1.3rem;
+  }
+  #payloads-view .btn:hover, #payloads-view .btn:focus {
+    outline:0;
+    background:#a2a2a6;
+    color:#202020;
+  }
+  .payload-btn-title {
+    display:block !important;
+    visibility:visible !important;
+    opacity:1 !important;
+    margin:0;
+    padding:0;
+    color:#fff !important;
+    -webkit-text-fill-color:#fff;
+    line-height:2.5rem;
+    font-size:1.3rem;
+    font-weight:bolder;
+  }
+  .payload-btn-description {
+    display:block !important;
+    visibility:visible !important;
+    opacity:1 !important;
+    max-width:100%;
+    margin:0;
+    padding:0;
+    overflow:hidden;
+    color:#ccc;
+    -webkit-text-fill-color:#ccc;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    line-height:2rem;
+    font-size:1rem;
+  }
+  .btn:hover .payload-btn-description,
+  .btn:focus .payload-btn-description {
+    color:#444 !important; -webkit-text-fill-color:#444;
+  }
+  .payload-btn-info {
+    display:block !important;
+    visibility:visible !important;
+    opacity:1 !important;
+    margin:0;
+    padding:0;
+    overflow:hidden;
+    color:#999;
+    -webkit-text-fill-color:#999;
+    text-overflow:ellipsis;
+    line-height:1.5rem;
+    font-size:.9rem;
+    font-weight:normal;
+  }
+  .btn:hover .payload-btn-info,
+  .btn:focus .payload-btn-info {
+    color:#555 !important; -webkit-text-fill-color:#555;
+  }
+  #payloads-view .btn:hover .payload-btn-title,
+  #payloads-view .btn:focus .payload-btn-title {
+    color:#202020 !important; -webkit-text-fill-color:#202020;
+  }
+  #payloads-view .btn.busy { opacity:.45; pointer-events:none; }
+
+  #loaderPrompt {
+    display:block; width:70%; max-width:760px; margin:0; padding:2rem;
+    box-sizing:border-box;
+    text-align:center; color:#fff;
+  }
+  .promptBadge { display:none; }
+  #loaderPrompt h2 { margin:0; color:#fff; font-size:2rem; }
+  #loaderPrompt p { margin:10px auto 24px; max-width:470px; color:#ccc; font-size:1rem; }
+  .promptActions { display:block; text-align:center; }
+  .promptButton {
+    display:inline-block; box-sizing:border-box; width:50%; min-width:5rem;
+    margin:.2rem; padding:1rem 2rem; border:0; border-radius:1.25rem;
+    background:#202125; color:#fff; line-height:2.5rem;
+    text-decoration:none; font-size:1.3rem; font-weight:800;
+  }
+  .promptButton.secondary { padding:.5rem 2rem; font-size:1rem; }
+  .promptButton:hover, .promptButton:focus {
+    outline:0; background:#a2a2a6; color:#202020;
+  }
+
+  #payloadToastContainer { position:fixed; top:20px; right:20px; z-index:9999; }
+  .payloadToast {
+    width:300px; margin-top:10px; padding:20px 25px; border-radius:1rem;
+    background:#15161a; color:#fff; box-shadow:0 0 10px rgba(0,0,0,.2);
+    opacity:1; transition:opacity .4s; pointer-events:none;
+    font:16px/1.35 Arial,sans-serif;
+  }
+  .payloadToast.hide { opacity:0; }
+
+  #slopkitHeader, #slopkitFooter { display:block; }
+  body.quiet { display:grid;
+    grid-template-rows:auto 1fr auto; width:100%; height:100vh; padding:0; margin:0;
+    overflow:hidden; align-items:stretch; justify-content:stretch;
+    background:#0c0c0f; color:#fff; font-family:Arial,sans-serif; }
+  body.quiet.payload-view-active { grid-template-rows:1fr auto; }
+  body.quiet.payload-view-active #slopkitHeader { display:none; }
+  body.quiet #slopkitHeader {
+    display:block; padding:.5rem; text-align:center; }
+  body.quiet #slopkitHeader h1 {
+    display:block; margin:.5rem 0; color:#fff; font-size:2rem; font-weight:bold; }
+  body.quiet #slopkitHeader p {
+    margin:.25rem 0; color:#ccc; font-size:1rem; }
+  body.quiet #cat { display:none; }
+  body.quiet #scr { display:block;
+    box-sizing:border-box; width:auto; max-width:none; height:auto; min-height:0; flex:1;
+    margin:8px; padding:8px; overflow-y:auto; overflow-x:hidden;
+    border:1px solid #202125; border-radius:5px; background:inherit;
+    box-shadow:none; color:#fff; font:16px/1.35 monospace; white-space:pre-wrap; }
+  body.quiet #slopkitFooter {
+    display:block; padding:.5rem; color:#ccc; text-align:center; font-size:.8rem; }
 
   #wrap { display:none !important; }
 </style>
 </head>
 <body class="quiet">
-<div id="failureMessage">UNLUCKY &mdash; YOU NEED TO REBOOT</div>
-<h1>poops</h1>
-<div id="reboot"></div>
-<div id="verdict"></div>
-<div id="danger"></div>
-<div id="stage">idle</div>
-<div id="vitals"></div>
-<div id="cfg"></div>
-<pre id="early"></pre>
-<pre id="scr"></pre>
-<div id="payloadMenu">
-  <div class="payloadGrid">
-    <a class="payloadTile" href="#" data-name="shortcut.elf" data-key="shortcut" style="display:none"></a>
-    <a class="payloadTile" href="#" data-name="payload.elf" data-key="autoload" style="display:none"></a>
+<div id="slopkitHeader">
+  <h1>PS5 SlopKit Jailbreak (9.00-12.00)</h1>
+  <p>Current firmware: <b id="currentFirmware">detecting...</b></p>
+</div>
+<div id="main-content">
+  <div id="console-view" class="app-view selected">
+    <div id="failureMessage">UNLUCKY &mdash; YOU NEED TO REBOOT</div>
+    <h1>poops</h1>
+    <div id="reboot"></div>
+    <div id="verdict"></div>
+    <div id="danger"></div>
+    <div id="stage">idle</div>
+    <div id="vitals"></div>
+    <div id="cfg"></div>
+    <pre id="early"></pre>
+    <pre id="scr"></pre>
+    <div id="nav"></div>
+    <div id="arm" hidden>Open this page with <b>?go=1</b> to arm it. Nothing runs
+    otherwise.</div>
+    <div id="wrap">
+      <table>
+        <thead><tr><th>#</th><th>test</th><th>st</th><th>result</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div id="tally"></div>
+    <div id="summary"></div>
+  </div>
+  <div id="payloads-view" class="app-view">
+    <div class="payloadHeader">
+      <h2>PS5 SlopKit Payloads (9.00-12.00)</h2>
+      <div class="payloadEyebrow" id="payloadNetworkStatus">Listening on console port 9021</div>
+      <p id="payloadProgress">Select a payload to send it to the ELF loader.</p>
+      <a class="homeLink" href="../index.html">Home</a>
+    </div>
+    <div class="payloadGrid"></div>
+  </div>
+  <div id="prompt-view" class="app-view">
+    <div id="loaderPrompt">
+      <div class="promptBadge">9021</div>
+      <h2>ELF loader is not running</h2>
+      <p>Port 9021 is not open. Would you like to run the jailbreak now and start the ELF loader?</p>
+      <div class="promptActions">
+        <a id="promptJailbreak" class="promptButton" href="#">Jailbreak</a>
+        <a class="promptButton secondary" href="../index.html">Cancel</a>
+      </div>
+    </div>
   </div>
 </div>
-<div id="nav"></div>
-<div id="arm" hidden>Open this page with <b>?go=1</b> to arm it. Nothing runs
-otherwise.</div>
-<div id="wrap">
-<table>
-  <thead><tr><th>#</th><th>test</th><th>st</th><th>result</th></tr></thead>
-  <tbody id="rows"></tbody>
-</table>
-</div>
-<div id="tally"></div>
-<div id="summary"></div>
+<div id="payloadToastContainer"></div>
+<div id="slopkitFooter">slopkit final</div>
 
 <div id="console" hidden></div>
 
-<script src="rop.js"></script>
-<script src="main.js?v=19"></script>
+<script src="rop.js?v=final"></script>
+<script src="main.js?v=final"></script>
 <script>window.offsetsReady = new Promise(function (res, rej) {
     var s = document.querySelector('script[src^="../offsets/"]');
     if (!s) return rej(new Error("offsets script was never injected by main.js"));
@@ -218,8 +406,8 @@ otherwise.</div>
 </script>
 <script src="syscalls.js"></script>
 
-<script type="module">import { establishPrimitive, fakeCellReleased } from "./core.js?v=10";
-import { installWindowP, pairStatus } from "./mem.js?v=10";
+<script type="module">import { establishPrimitive, fakeCellReleased } from "./core.js?v=final";
+import { installWindowP, pairStatus } from "./mem.js?v=final";
 import { int64 } from "./int64.js";
 
 let BANNED, ERRNO, K, r32, r16, w32, hexBytes, coreList;
@@ -227,7 +415,9 @@ let PK = null, makePoopsEngine = null, buildLadder = null;
 
 async function loadPoopsModules() {
     await window.offsetsReady;
-    const lib = await import("./poops.js?v=37");
+    const firmwareLabel = document.getElementById("currentFirmware");
+    if (firmwareLabel) firmwareLabel.textContent = window.fw_str || "unknown";
+    const lib = await import("./poops.js?v=final");
     BANNED = lib.BANNED;
     ERRNO = lib.ERRNO;
     K = lib.K;
@@ -284,11 +474,12 @@ const ONLY = (Q.get("only") || "").split(",").map(s => s.trim()).filter(Boolean)
 const FILTERED_RUN = ONLY.length > 0 || FROM !== "";
 const MAX_ATTEMPTS = parseInt(Q.get("max") || "0", 10) || 0;
 const CORE_OVERRIDE = Q.has("core") ? parseInt(Q.get("core"), 10) : -1;
+const REUSE_ELFLDR = Q.get("reuse") === "1";
 
 const PROGRESS_KEY = "slopkit-poops:next";
 const RUNLOG_KEY = "slopkit-poops:last";
-const ROUTE_VERSION = "41";
-const REV = "slopkit-poops-52-single-pass";
+const ROUTE_VERSION = "final";
+const REV = "slopkit-poops-final";
 const CHECKPOINT_ONLY = "ps0_preflight,ps1_prepare,ps3_stage0";
 const STAGE5_ONLY = "ps0_preflight,ps1_prepare,ps3_stage0,ps4_validate,"
     + "ps5_stage1,ps6_stage2,ps8_stage3,ps9_stage4,ps10_stage5";
@@ -375,6 +566,15 @@ const PRODUCTION_QUERY = Object.freeze({
     attempts: "8", only: STAGE5_ONLY, log: "debug", payload: "1",
     v: ROUTE_VERSION
 });
+const PRODUCTION_HREF = "poops.html?" + Object.keys(PRODUCTION_QUERY)
+    .map(key => encodeURIComponent(key) + "="
+        + encodeURIComponent(PRODUCTION_QUERY[key]))
+    .join("&");
+const REUSE_QUERY = Object.freeze({
+    go: "1", auto: "1", production: "1", trigger: "netcontrol",
+    attempts: "8", only: STAGE5_ONLY, log: "debug", payload: "1",
+    reuse: "1", v: ROUTE_VERSION
+});
 const STAGE5_INTENT = Q.has("stage5") || Q.has("payload")
     || Q.getAll("proof").some(value => value.indexOf("stage5") === 0)
     || Q.getAll("only").some(value => value.split(",")
@@ -396,7 +596,7 @@ function exactQuery(expected) {
 const STAGE5_REQUEST_ERROR = (() => {
     if (!STAGE5_INTENT) return "";
     if (!exactQuery(STAGE5_DRY_QUERY) && !exactQuery(STAGE5_LIVE_QUERY)
-        && !exactQuery(PRODUCTION_QUERY))
+        && !exactQuery(PRODUCTION_QUERY) && !exactQuery(REUSE_QUERY))
         return "noncanonical-stage5-request";
     return STAGE5_FIRMWARES.indexOf(window.fw_str) >= 0
         ? "" : "unsupported-stage5-firmware";
@@ -404,10 +604,10 @@ const STAGE5_REQUEST_ERROR = (() => {
 
 const PRODUCTION_REQUEST_ERROR = (() => {
     if (!Q.has("production") && !Q.has("auto") && !Q.has("next")) return "";
-    return exactQuery(PRODUCTION_QUERY)
+    return exactQuery(PRODUCTION_QUERY) || exactQuery(REUSE_QUERY)
         ? "" : "noncanonical-production-request";
 })();
-const PRODUCTION_RUN = exactQuery(PRODUCTION_QUERY);
+const PRODUCTION_RUN = exactQuery(PRODUCTION_QUERY) || exactQuery(REUSE_QUERY);
 
 function cleanNegativeCheckpoint(last) {
     return last && last.rev === REV && last.checkpoint === true
@@ -480,7 +680,7 @@ function canStartStage5Proof(last, proof, payload) {
 let elfldrSpawned = false;
 const screenLines = [];
 
-const SCREEN_LINES = 12;
+const screenLineLimit = 12;
 const scrEl = document.getElementById("scr");
 
 const clean = s => String(s).replace(/[^A-Za-z0-9_.:=,+-]/g, "_").slice(0, 200);
@@ -495,7 +695,9 @@ const CRITICAL_MARKS = { "TRIGGER-ARMED": 1, "LATCH-ESCALATE": 1 };
 function repaintScreen() {
     if (!screenDirty) return;
     screenDirty = false;
-    try { scrEl.textContent = screenLines.join("\n"); } catch { }
+    try {
+        scrEl.textContent = screenLines.join("\n");
+    } catch { }
 }
 function setRaceMode(on) {
     const was = raceMode;
@@ -505,8 +707,8 @@ function setRaceMode(on) {
 }
 function screenLine(text) {
     screenLines.push(text.length > 120 ? text.slice(0, 117) + "..." : text);
-    if (screenLines.length > SCREEN_LINES)
-        screenLines.splice(0, screenLines.length - SCREEN_LINES);
+    if (screenLines.length > screenLineLimit)
+        screenLines.splice(0, screenLines.length - screenLineLimit);
 
     if (raceMode) {
         screenDirty = true;
@@ -515,7 +717,9 @@ function screenLine(text) {
         lastPaint = nowMs;
         screenDirty = false;
     }
-    try { scrEl.textContent = screenLines.join("\n"); } catch { }
+    try {
+        scrEl.textContent = screenLines.join("\n");
+    } catch { }
 }
 
 const CONCISE_SCREEN_SHOW = {
@@ -535,6 +739,7 @@ const CONCISE_SCREEN_SHOW = {
     "STAGE5-DONE": 1,
     "POOPS-COMPLETE": 1,
     "POOPS-FAILED": 1,
+    "ELFLDR-MENU-VISIBLE": 1,
     "ELF-SENT": 1,
     "ELF-SEND-FAILED": 1,
     "ELF-SENDER-BLOCKED": 1
@@ -584,7 +789,8 @@ function captureRemoteEvent(tag, extra) {
     if (tag !== "TEST" && CONCISE_SCREEN_SHOW[tag] !== 1
         && !/^(POOPS-|LATCH-|TRIGGER-)/.test(tag)
         && tag !== "CHAIN-DEAD" && tag !== "PAGE-LEFT-MID-RUN"
-        && tag !== "OFFSETS-READY" && REMOTE_DETAIL_SHOW[tag] !== 1
+        && tag !== "OFFSETS-READY"
+        && REMOTE_DETAIL_SHOW[tag] !== 1
         && !REMOTE_STAGE_SHOW.test(tag)) return;
     remoteEvents.push({
         seq: ++remoteSequence,
@@ -605,7 +811,7 @@ function sendRemoteEvents(unloading) {
         clearTimeout(remoteFlushTimer);
         remoteFlushTimer = null;
     }
-    if (!remoteEvents.length) return;
+    if (!remoteEvents.length) return Promise.resolve();
     const events = remoteEvents.splice(0, remoteEvents.length);
     const early = !remoteEarlyAttached && Array.isArray(window.__jbEarly)
         ? window.__jbEarly.slice(-8) : [];
@@ -627,16 +833,16 @@ function sendRemoteEvents(unloading) {
         events: events
     });
     if (unloading && typeof navigator.sendBeacon === "function") {
-        try { if (navigator.sendBeacon(REMOTE_LOG_URL, body)) return; } catch (e) { }
+        try { if (navigator.sendBeacon(REMOTE_LOG_URL, body)) return Promise.resolve(); } catch (e) { }
     }
     try {
-        fetch(REMOTE_LOG_URL, {
+        return fetch(REMOTE_LOG_URL, {
             method: "POST",
             headers: { "Content-Type": "text/plain;charset=UTF-8" },
             body: body,
             cache: "no-store"
-        }).catch(function () { });
-    } catch (e) { }
+        }).then(function () { }, function () { });
+    } catch (e) { return Promise.resolve(); }
 }
 
 function screenMark(tag, extra) {
@@ -644,11 +850,11 @@ function screenMark(tag, extra) {
     if (tag === "STAGE5-DONE" && /(?:^|-)joinRet=0(?:-|$)/.test(s0) &&
         /(?:^|-)shellcodeRet=0x0+(?:-|$)/.test(s0)) {
         elfldrSpawned = true;
-        document.body.classList.add("loader-ready");
         clearFailureBanners();
         setCatResult(true);
         showVerdict(false, "ELF LOADER READY");
         stage("ELF LOADER READY", "ok");
+        showPayloadMenu();
     }
     captureRemoteEvent(tag, s0);
     let line;
@@ -728,7 +934,7 @@ const rowsEl = document.getElementById("rows");
 const tallyEl = document.getElementById("tally");
 const summaryEl = document.getElementById("summary");
 const navEl = document.getElementById("nav");
-const payloadMenuEl = document.getElementById("payloadMenu");
+const payloadMenuEl = document.getElementById("payloads-view");
 const rowByKey = new Map();
 let payloadSendBusy = false;
 const PAYLOAD_PORT = 9021;
@@ -739,31 +945,238 @@ let payloadSockaddrStore = null;
 let payloadSocketOptionStore = null;
 let payloadSendTimeoutStore = null;
 let payloadSenderBlocked = "";
+let consoleNetworkInfo = { ip: "", name: "" };
 
-function showPayloadMenu() {
-    navEl.textContent = "";
-    navEl.style.display = "none";
-    payloadMenuEl.className = "on";
-    const tiles = payloadMenuEl.getElementsByTagName("a");
-    for (let i = 0; i < tiles.length; ++i) {
-        const image = tiles[i].getElementsByTagName("img")[0];
-        if (image && !image.getAttribute("src"))
-            image.setAttribute("src", image.getAttribute("data-src"));
+const PAYLOADS = Object.freeze([
+    { title: "ftpsrv", description: "FTP server. Runs on port 2121.",
+        name: "ftpsrv-ps5.elf", info: "ftpsrv-ps5.elf - john-tornblom" },
+    { title: "gdbsrv", description: "GDB server. Runs on port 2159.",
+        name: "gdbsrv-ps5.elf", info: "gdbsrv-ps5.elf - john-tornblom" },
+    { title: "klogsrv", description: "Kernel log server. Runs on port 3232.",
+        name: "klogsrv-ps5.elf", info: "klogsrv-ps5.elf - john-tornblom" },
+    { title: "shsrv", description: "Telnet shell server. Runs on port 2323.",
+        name: "shsrv-ps5.elf", info: "shsrv-ps5.elf - john-tornblom" },
+    { title: "websrv", description: "Homebrew web server. Runs on port 8080.",
+        name: "websrv-ps5.elf", info: "websrv-ps5.elf - john-tornblom" },
+    { title: "ps5-kstuff", description: "Kernel support payload and FPKG enabler.",
+        name: "kstuff.elf", info: "kstuff.elf - EchoStretch" },
+    { title: "PLK Manager", description: "Payload management tools.",
+        name: "PLK.elf", info: "PLK.elf - PLK" },
+    { title: "ShadowMountPlus", description: "Mount and manage game images.",
+        name: "shadowmountplus.elf", info: "shadowmountplus.elf - Drakmor" },
+    { title: "WKAL autoload", description: "", name: "payload.elf",
+        info: "payload.elf", hidden: true }
+]);
+
+function populatePayloadButtons() {
+    const grid = payloadMenuEl.getElementsByClassName("payloadGrid")[0];
+    if (!grid || grid.getElementsByClassName("payloadTile").length) return;
+
+    for (let i = 0; i < PAYLOADS.length; ++i) {
+        const payload = PAYLOADS[i];
+        const button = document.createElement("a");
+        button.classList.add("payloadTile");
+        button.classList.add("btn");
+        button.tabIndex = 0;
+        button.setAttribute("data-name", payload.name);
+
+        const title = document.createElement("p");
+        title.classList.add("payloadName");
+        title.classList.add("payload-btn-title");
+        title.textContent = payload.title;
+
+        const description = document.createElement("p");
+        description.classList.add("payload-btn-description");
+        description.textContent = payload.description;
+
+        const info = document.createElement("p");
+        info.classList.add("payloadStatus");
+        info.classList.add("payload-btn-info");
+        info.setAttribute("data-ready", payload.info);
+        info.textContent = payload.info.replace(" - ", " · ");
+
+        button.appendChild(title);
+        button.appendChild(description);
+        button.appendChild(info);
+        if (payload.hidden) button.style.display = "none";
+        button.addEventListener("click", function (event) {
+            if (event && event.preventDefault) event.preventDefault();
+            sendPayloadInPlace(payload.name, button);
+        });
+        grid.appendChild(button);
     }
-    if (tiles.length) try { tiles[0].focus(); } catch (e) { }
+}
+populatePayloadButtons();
+
+function switchAppView(viewId) {
+    const main = document.getElementById("main-content");
+    const target = document.getElementById(viewId);
+    if (!main || !target) return;
+    if (viewId === "payloads-view")
+        document.body.classList.add("payload-view-active");
+    else
+        document.body.classList.remove("payload-view-active");
+    const views = main.getElementsByClassName("app-view");
+    for (let i = 0; i < views.length; ++i)
+        views[i].classList.remove("selected");
+    target.classList.add("selected");
+    void target.offsetHeight;
 }
 
+function setPayloadTileBusy(tile, busy) {
+    if (busy) tile.classList.add("busy");
+    else tile.classList.remove("busy");
+}
+
+function showPayloadMenu(readyState) {
+    const ready = readyState !== false;
+    populatePayloadButtons();
+
+    const prompt = document.getElementById("loaderPrompt");
+    prompt.classList.remove("on");
+    navEl.textContent = "";
+    navEl.style.display = "none";
+
+    payloadMenuEl.classList.add("on");
+    switchAppView("payloads-view");
+
+    const networkStatus = document.getElementById("payloadNetworkStatus");
+    if (networkStatus) {
+        networkStatus.innerHTML = consoleNetworkInfo.ip
+            ? "Listening on: <b>" + consoleNetworkInfo.ip + "</b> (port: 9021)"
+                + (consoleNetworkInfo.name ? " (" + consoleNetworkInfo.name + ")" : "")
+            : "Listening on console port 9021";
+    }
+
+    const grid = payloadMenuEl.getElementsByClassName("payloadGrid")[0];
+    if (grid) grid.removeAttribute("style");
+
+    const tiles = payloadMenuEl.getElementsByClassName("payloadTile");
+    for (let i = 0; i < tiles.length; ++i) {
+        setPayloadTileBusy(tiles[i], !ready);
+        tiles[i].style.pointerEvents = ready ? "auto" : "none";
+        tiles[i].tabIndex = ready ? 0 : -1;
+    }
+
+    const progress = document.getElementById("payloadProgress");
+    if (progress && ready)
+        progress.textContent = "Select a payload to send it to the ELF loader.";
+
+    setTimeout(function () {
+        const firstRect = tiles.length ? tiles[0].getBoundingClientRect() : null;
+        const firstStyle = tiles.length ? getComputedStyle(tiles[0]) : null;
+        const firstTitle = tiles.length
+            ? tiles[0].getElementsByClassName("payload-btn-title")[0] : null;
+        const titleStyle = firstTitle ? getComputedStyle(firstTitle) : null;
+        flushMark("ELFLDR-MENU-VISIBLE", "tiles=" + tiles.length
+            + "-menu=" + getComputedStyle(payloadMenuEl).display
+            + "-firstW=" + (firstRect ? Math.round(firstRect.width) : 0)
+            + "-firstH=" + (firstRect ? Math.round(firstRect.height) : 0)
+            + "-firstDisplay=" + (firstStyle ? firstStyle.display : "none")
+            + "-firstColor=" + (firstStyle ? firstStyle.color : "none")
+            + "-titleDisplay=" + (titleStyle ? titleStyle.display : "none")
+            + "-titleColor=" + (titleStyle ? titleStyle.color : "none")
+            + "-titleFill=" + (titleStyle
+                ? (titleStyle.webkitTextFillColor || "unset") : "none")
+            + "-titleText=" + (firstTitle ? clean(firstTitle.textContent) : "none"));
+        sendRemoteEvents(false);
+    }, 0);
+}
 function setPayloadTileState(tile, state) {
     tile.setAttribute("data-state", state);
-    const image = tile.getElementsByTagName("img")[0];
-    const key = tile.getAttribute("data-key");
-    if (image && key)
-        image.setAttribute("src", "../ui/payload-" + key + "-" + state + ".png");
+    const status = tile.getElementsByClassName("payloadStatus")[0];
+    if (status)
+        status.textContent = state === "default"
+            ? (status.getAttribute("data-ready") || "Ready")
+            : state === "sending" ? "Sending"
+                : state === "sent" ? "Sent to port 9021" : "Failed";
+}
+
+async function probeExistingElfLoader() {
+    // Match UMTX2's safe probe: do not connect an empty client to elfldr.
+    // If bind(127.0.0.1:9021) fails, another socket already owns the port.
+    preparePayloadSender();
+    let fd = -1;
+    let portOwned = false;
+    try {
+        const opened = await sys(SYS_SOCKET, 2, 1, 0);
+        if (opened.failed || opened.s32 < 0) return false;
+        fd = opened.s32;
+        track(fd);
+        const bound = await sys(SYS_BIND, fd, payloadSockaddrStore.ptr, 0x10);
+        portOwned = bound.failed || bound.s32 < 0;
+    } finally {
+        if (fd >= 0 && !chainDead) {
+            try {
+                const closed = await sys(SYS_CLOSE, fd);
+                if (!closed.failed && closed.s32 === 0) untrack(fd);
+            } catch (e) { }
+        }
+    }
+    return portOwned;
+}
+
+function openExistingPayloadMenu() {
+    elfldrSpawned = true;
+    clearFailureBanners();
+    setCatResult(true);
+    showVerdict(false, "ELF LOADER ALREADY READY ON PORT 9021");
+    stage("ELF LOADER READY -- opening payload menu", "ok");
+    showPayloadMenu();
+    flushMark("ELFLDR-REUSED", "bind-probe-found-127.0.0.1-port=9021-owned");
+}
+
+function showLoaderPrompt() {
+    clearFailureBanners();
+    payloadMenuEl.classList.remove("on");
+    const prompt = document.getElementById("loaderPrompt");
+    prompt.classList.add("on");
+    switchAppView("prompt-view");
+    const promptButtons = prompt.getElementsByClassName("promptButton");
+    for (let i = 0; i < promptButtons.length; ++i) {
+        promptButtons[i].removeAttribute("style");
+    }
+    const button = document.getElementById("promptJailbreak");
+    button.href = PRODUCTION_HREF;
+    try { button.focus(); } catch (e) { }
+}
+
+async function refreshConsoleNetworkInfo() {
+    if (consoleNetworkInfo.ip) return consoleNetworkInfo;
+    try {
+        const countResult = await sys(SYS_NETGETIFLIST, 0, 10);
+        if (countResult.failed || countResult.s32 <= 0)
+            throw payloadSyscallError("netgetiflist count", countResult);
+        const count = Math.min(countResult.s32, 32);
+        const recordSize = 0x3c0;
+        const records = mem(recordSize * count);
+        records.u8.fill(0);
+        const listResult = await sys(SYS_NETGETIFLIST, records.ptr, count);
+        if (listResult.failed)
+            throw payloadSyscallError("netgetiflist records", listResult);
+        for (let i = 0; i < count; ++i) {
+            const base = i * recordSize;
+            const octets = [records.u8[base + 40], records.u8[base + 41],
+                records.u8[base + 42], records.u8[base + 43]];
+            const ip = octets.join(".");
+            if (ip === "0.0.0.0" || ip === "127.0.0.1") continue;
+            let name = "";
+            for (let j = 0; j < 16 && records.u8[base + j]; ++j)
+                name += String.fromCharCode(records.u8[base + j]);
+            consoleNetworkInfo = { ip: ip, name: name };
+            flushMark("CONSOLE-NETWORK", "ip=" + clean(ip) + "-if=" + clean(name));
+            break;
+        }
+    } catch (error) {
+        flushMark("CONSOLE-NETWORK-FAILED", clean(error && error.message
+            ? error.message : error));
+    }
+    return consoleNetworkInfo;
 }
 
 function payloadIsListed(name) {
     if (!/^[A-Za-z0-9._-]+\.elf$/.test(name)) return false;
-    const tiles = payloadMenuEl.getElementsByTagName("a");
+    const tiles = payloadMenuEl.getElementsByClassName("payloadTile");
     for (let i = 0; i < tiles.length; ++i)
         if (tiles[i].getAttribute("data-name") === name) return true;
     return false;
@@ -825,7 +1238,7 @@ async function sendPayloadToElfldr(name, base) {
     if (!bytes.length)
         throw new Error("payload is empty");
     if (bytes.length > PAYLOAD_MAX_SIZE)
-        throw new Error("payload is larger than the " + (PAYLOAD_MAX_SIZE / 1048576) + " MiB limit");
+        throw new Error("payload is larger than the 4 MiB limit");
     if (bytes.length < 4 || bytes[0] !== 0x7f || bytes[1] !== 0x45
         || bytes[2] !== 0x4c || bytes[3] !== 0x46)
         throw new Error("payload does not start with the ELF signature");
@@ -915,15 +1328,21 @@ async function sendPayloadToElfldr(name, base) {
 async function sendPayloadInPlace(name, tile) {
     if (payloadSendBusy) return;
     payloadSendBusy = true;
-    const tiles = payloadMenuEl.getElementsByTagName("a");
+    const titleEl = tile.getElementsByClassName("payloadName")[0];
+    const title = titleEl ? titleEl.textContent : name;
+    const toast = showPayloadToast(title + ": Fetching...");
+    const tiles = payloadMenuEl.getElementsByClassName("payloadTile");
     for (let i = 0; i < tiles.length; ++i)
-        tiles[i].className = "payloadTile busy";
-    tile.className = "payloadTile";
+        setPayloadTileBusy(tiles[i], true);
+    setPayloadTileBusy(tile, false);
     setPayloadTileState(tile, "sending");
     try {
+        updatePayloadToast(toast, title + ": Sending to port 9021...");
         const result = await sendPayloadToElfldr(name);
-        tile.className = "payloadTile";
+        setPayloadTileBusy(tile, false);
         setPayloadTileState(tile, "sent");
+        updatePayloadToast(toast, title + ": Sent to port 9021");
+        dismissPayloadToast(toast, 2000);
         flushMark("ELF-SENT", "name=" + clean(result.name) + "-bytes="
             + result.bytes + "-target=" + clean(result.target)
             + "-port=" + result.port);
@@ -931,36 +1350,50 @@ async function sendPayloadInPlace(name, tile) {
             flushMark("ELF-SOCKET-CLOSE-WARN", "name=" + clean(result.name)
                 + "-why=" + clean(result.closeWarning.message || result.closeWarning));
     } catch (error) {
-        tile.className = "payloadTile";
+        setPayloadTileBusy(tile, false);
         setPayloadTileState(tile, "failed");
+        updatePayloadToast(toast, title + ": Error: "
+            + (error && error.message ? error.message : error));
+        dismissPayloadToast(toast, 5000);
         flushMark("ELF-SEND-FAILED", "name=" + clean(name) + "-why="
             + clean(error && error.message ? error.message : error));
     } finally {
         if (payloadSenderBlocked) {
             payloadSendBusy = true;
             for (let i = 0; i < tiles.length; ++i)
-                tiles[i].className = "payloadTile busy";
+                setPayloadTileBusy(tiles[i], true);
             setCatResult(false);
             flushMark("ELF-SENDER-BLOCKED", clean(payloadSenderBlocked));
         } else {
             payloadSendBusy = false;
             for (let i = 0; i < tiles.length; ++i)
-                if (tiles[i] !== tile) tiles[i].className = "payloadTile";
+                if (tiles[i] !== tile) setPayloadTileBusy(tiles[i], false);
             try { tile.focus(); } catch (e) { }
         }
     }
 }
 
-{
-    const tiles = payloadMenuEl.getElementsByTagName("a");
-    for (let i = 0; i < tiles.length; ++i) {
-        const tile = tiles[i];
-        tile.onclick = function (e) {
-            if (e && e.preventDefault) e.preventDefault();
-            sendPayloadInPlace(tile.getAttribute("data-name"), tile);
-            return false;
-        };
-    }
+function showPayloadToast(message) {
+    const container = document.getElementById("payloadToastContainer");
+    const toast = document.createElement("div");
+    toast.className = "payloadToast";
+    toast.textContent = message;
+    container.appendChild(toast);
+    return toast;
+}
+
+function updatePayloadToast(toast, message) {
+    if (toast) toast.textContent = message;
+}
+
+function dismissPayloadToast(toast, delay) {
+    setTimeout(function () {
+        if (!toast) return;
+        toast.className = "payloadToast hide";
+        setTimeout(function () {
+            if (toast.parentNode) toast.parentNode.removeChild(toast);
+        }, 450);
+    }, delay);
 }
 
 function stage(text, cls) {
@@ -1269,7 +1702,7 @@ async function preflight() {
 
     let verdict = "ok";
     try {
-        const r = await fetch("rop_slave.js", { cache: "no-store" });
+        const r = await fetch("rop_slave.js?v=final", { cache: "no-store" });
         if (!r.ok) verdict = "http-" + r.status;
     } catch (err) { verdict = "fetch-threw"; }
     if (verdict === "ok") {
@@ -1284,7 +1717,7 @@ async function preflight() {
             };
             const t = setTimeout(() => finish("timeout"), 4000);
             try {
-                w = new Worker("rop_slave.js");
+                w = new Worker("rop_slave.js?v=final");
                 w.onmessage = () => { clearTimeout(t); finish("ok"); };
                 w.onerror = () => { clearTimeout(t); finish("worker-error"); };
                 w.postMessage(0);
@@ -1727,7 +2160,7 @@ async function runLadder() {
     if (payloadSuccess) {
         flushMark("ELFLDR-MENU-INPAGE",
             "no-navigation-parked-racers-and-fds-remain-owned-port=9021");
-        showPayloadMenu();
+        if (!payloadMenuEl.classList.contains("on")) showPayloadMenu();
         if (cfg.autoload) {
             stage("autoloading " + cfg.autoload + " in 4 s", "ok");
             setTimeout(function () {
@@ -1745,6 +2178,8 @@ async function runLadder() {
     }
 }
 
+let bootChainReady = false;
+
 async function bootChain() {
     const bootTimer = setTimeout(() => {
         flushMark("BOOT-STALLED", "ms=45000-stage=boot-nothing-changed-yet");
@@ -1755,6 +2190,7 @@ async function bootChain() {
         await preflight();
         refuseReferenceChain();
         await bootPrimitiveAndChain();
+        bootChainReady = true;
     } finally {
         clearTimeout(bootTimer);
     }
@@ -1879,7 +2315,8 @@ async function main() {
     lockNav(true);
     runInFlight = true;
     try {
-        await bootChain();
+        if (!bootChainReady) await bootChain();
+        await refreshConsoleNetworkInfo();
 
         await chooseCore();
 
@@ -2011,6 +2448,31 @@ function lastRunText() {
         await clearMain();
         sendRemoteEvents(false);
         return;
+    }
+
+    if (REUSE_ELFLDR) {
+        screenLine("payloads -- checking ELF loader on port 9021");
+        stage("checking for an existing ELF loader on port 9021");
+        try {
+            await bootChain();
+            await refreshConsoleNetworkInfo();
+            if (await probeExistingElfLoader()) {
+                openExistingPayloadMenu();
+                sendRemoteEvents(false);
+                return;
+            }
+            flushMark("ELFLDR-REUSE-MISS", "127.0.0.1-port=9021-closed");
+            stage("no ELF loader found", "bad");
+            showLoaderPrompt();
+            sendRemoteEvents(false);
+            return;
+        } catch (err) {
+            const message = (err && err.message) || String(err);
+            stage("could not check port 9021: " + message, "bad");
+            flushMark("ELFLDR-REUSE-PROBE-FAILED", clean(message));
+            sendRemoteEvents(false);
+            return;
+        }
     }
 
     if (PRODUCTION_RUN) {

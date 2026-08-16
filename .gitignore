@@ -9,3 +9,5 @@ __pycache__/
 *.elf
 *.bak
 /slopkit.*
+/autoloader-v0.2.1
+/autoloader.mini

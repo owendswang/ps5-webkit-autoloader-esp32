@@ -1,6 +1,6 @@
 # ESP32 PS5 WebKit Autoloader
 
-A compact HTTP/HTTPS host for the PS5 WebKit Autoloader, packaged as 4 MB flash images for ESP32-PICO and ESP32-S2 boards. Both targets use the same LittleFS image and do not require PSRAM.
+A compact HTTP/HTTPS host for the PS5 WebKit Autoloader, packaged as 4 MB flash images for ESP32-PICO, ESP32-S2, and ESP-12F (ESP8266) boards. All targets use LittleFS and do not require PSRAM.
 
 The web content in `autoloader/` is based on a modified version of the [`ps5-webkit-autoloader`](https://github.com/itsPLK/ps5-webkit-autoloader) frontend. Its bundled [`slopkit`](https://github.com/jordyidk/slopkit) and [`ps5-unified-autoloader`](https://github.com/itsPLK/ps5-unified-autoloader) components also contain project-specific modifications and therefore do not exactly match upstream.
 
@@ -20,6 +20,7 @@ If an attempt fails, follow the on-screen instruction to reboot and try again. I
 
 - Arduino CLI
 - Arduino ESP32 core 2.0.11
+- Arduino ESP8266 core 3.1.2 (required for `make 8266`)
 
 Install the Arduino CLI and required core:
 
@@ -38,7 +39,7 @@ The build copies `autoloader/` to a temporary `data/` directory, compresses the 
 - `build/pico/esp32-arduino.pico.merged.bin`: Intended to support generic ESP32-PICO series boards.
 - `build/s2/esp32-arduino.s2.merged.bin`: Intended to support ESP32-S2 series boards.
 
-Use `make pico`, `make s2`, or `make clean` to build an individual target or clean generated files.
+Use `make pico`, `make s2`, `make 8266`, or `make clean` to build an individual target or clean generated files. The ESP-12F target uses the Generic ESP8266 4 MB / 3 MB LittleFS layout and produces `build/8266/esp8266-arduino.esp12f.merged.bin`.
 
 ## Credits
 

@@ -41,7 +41,7 @@ const IDENT_OFFSET = 0x20;
 const LEAK_SLOT_INDEX = 2;
 const LEAK_SLOT_OFFSET = 0x10 + 8 * LEAK_SLOT_INDEX;
 
-const REVISION = "slopkit-core-1";
+const REVISION = "slopkit-core-final";
 const attemptKey = `${REVISION}:attempts`;
 
 const burstKey = `${REVISION}:burst`;

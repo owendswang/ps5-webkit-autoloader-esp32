@@ -5,7 +5,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <title>WebKit Autoloader Installer v0.2.1 by PLK (built 2026-08-14 11:06:40 UTC)</title>
+  <title>WebKit Autoloader Installer v0.3.0 by PLK (built 2026-08-14 11:09:34 UTC)</title>
   <style>
     * {
       margin: 0;
@@ -134,7 +134,29 @@
       z-index: 1;
       pointer-events: none;
     }
+
+    #logContainer {
+      margin-top: 1rem;
+      width: 100%;
+      max-width: 40rem;
+      height: 12rem;
+      background: #000;
+      border: 1px solid #2c3e5a;
+      border-radius: 8px;
+      overflow-y: auto;
+      text-align: left;
+      font-family: monospace;
+      font-size: 0.8rem;
+      padding: 0.5rem;
+      color: #cbd5e1;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    #logContainer.error {
+      color: #f00;
+    }
   </style>
+
 </head>
 
 <body>
@@ -143,13 +165,16 @@
     <h1>WebKit Autoloader Installer</h1>
     <p id="status">Loading&hellip;</p>
     <p id="detail"></p>
+
     <div id="progressWrap" hidden>
       <div id="progressBar"></div>
       <div id="progressPct">0%</div>
     </div>
+    <div id="logContainer" hidden></div>
+
   </main>
 
-  <footer id="footer">WebKit Autoloader Installer v0.2.1 by PLK (built 2026-08-14 11:06:40 UTC)<br />This project is free and open source: github.com/itsPLK/ps5-webkit-autoloader</footer>
+  <footer id="footer">WebKit Autoloader Installer v0.3.0 by PLK (built 2026-08-14 11:09:34 UTC)<br />This project is free and open source: github.com/itsPLK/ps5-webkit-autoloader</footer>
 
   <script>
     (function () {
@@ -162,11 +187,63 @@
       var progressPct = document.getElementById('progressPct');
       var completed = false;
 
+      var logContainer = document.getElementById('logContainer');
+      var seenLogs = "";
+
+      function appendLog(msg) {
+        logContainer.hidden = false;
+        var div = document.createElement('div');
+        div.textContent = msg;
+        logContainer.appendChild(div);
+        logContainer.scrollTop = logContainer.scrollHeight;
+      }
+
+
+      var logPos = 0;
+      var logXhr = null;
+
+      function pollLogs() {
+        logXhr = new XMLHttpRequest();
+        logXhr.open('GET', '/logs?pos=' + logPos, true);
+        logXhr.onreadystatechange = function () {
+          if (logXhr.readyState === 4) {
+            if (logXhr.status === 200) {
+              var newLogs = logXhr.responseText;
+              if (newLogs.length > 0) {
+                var lines = newLogs.split('\\n');
+                for (var i = 0; i < lines.length; i++) {
+                  if (lines[i].trim() !== '') appendLog(lines[i]);
+                }
+              }
+              var newPosStr = logXhr.getResponseHeader("X-Log-Pos");
+              if (newPosStr) {
+                logPos = parseInt(newPosStr, 10);
+              }
+              // Add a slight delay before reconnecting to reduce server load
+              setTimeout(pollLogs, 100);
+            } else {
+              // Server is down or error
+              if (completed) return; // Stop polling completely if we finished
+              setTimeout(pollLogs, 1000);
+            }
+          }
+        };
+        logXhr.send();
+      }
+      // Start the long-polling loop
+      pollLogs();
+
+
       var AUTOLOADER_URL = '/app/index.html';
 
       function setProgress(pct) {
         progressBar.style.transform = 'scaleX(' + pct / 100 + ')';
         progressPct.textContent = pct + '%';
+      }
+
+      function setSlow() {
+        statusEl.textContent = 'Caching is taking unusually long';
+        detailEl.textContent = 'The shortcut is only created after the cache finishes. If this never completes, close the browser and re-run the installer.';
       }
 
       function setCaching() {
@@ -180,53 +257,74 @@
           return;
         }
         completed = true;
-        statusEl.textContent = 'Cache complete';
-        detailEl.textContent = 'Starting WebKit Autoloader...';
-        progressWrap.hidden = false;
-        setProgress(100);
         window.location.replace(AUTOLOADER_URL);
       }
 
-      function cacheFailed() {
-        statusEl.textContent = 'Cache failed';
-        detailEl.textContent = 'Keep the ESP network connected, then reload this page to try again.';
-      }
-
       window.addEventListener('load', function () {
-        if (!window.applicationCache) {
-          cacheFailed();
-          return;
-        }
+        setCaching();
 
-        /* If this page was loaded from an already-current AppCache, the
-           noupdate event may have fired before window.load. IDLE is safe to
-           enter: it means there is no cache download still in progress. */
-        if (window.applicationCache.status === window.applicationCache.IDLE) {
-          goToAutoloader();
-        } else {
-          setCaching();
-        }
+        /* AppCache may already be current before the load handler runs. */
+        var waitTimer = setInterval(function () {
+          if (completed) {
+            clearInterval(waitTimer);
+            return;
+          }
+          if (window.applicationCache &&
+              window.applicationCache.status === window.applicationCache.IDLE) {
+            clearInterval(waitTimer);
+            goToAutoloader();
+          }
+        }, 1000);
+
+        /* Safety cap — never leave the installer hanging on screen. It does NOT
+           install or exit: a partial cache must never create a shortcut, so the
+           user simply re-runs the installer if this never completes. */
+        setTimeout(function () {
+          if (!completed) {
+            setSlow();
+          }
+        }, 120000);
       });
+
 
       if (window.applicationCache) {
         window.applicationCache.addEventListener('checking', function () {
           progressWrap.hidden = false;
+          appendLog("[AppCache] Checking for manifest...");
+        });
+        window.applicationCache.addEventListener('downloading', function () {
+          appendLog("[AppCache] Downloading cache...");
         });
         window.applicationCache.addEventListener('progress', function (e) {
+          if (e.url) appendLog("[AppCache] Fetching: " + e.url);
           if (e.total && e.total > 0) {
             var pct = Math.min(99, Math.round((e.loaded / e.total) * 100));
             setProgress(pct);
           }
         });
-        window.applicationCache.addEventListener('cached', goToAutoloader);
-        window.applicationCache.addEventListener('noupdate', goToAutoloader);
-        window.applicationCache.addEventListener('updateready', function () {
-          if (window.applicationCache.status === window.applicationCache.UPDATEREADY) {
-            window.applicationCache.swapCache();
-          }
+        window.applicationCache.addEventListener('error', function (e) {
+          appendLog("[AppCache] Error occurred! Status: " + window.applicationCache.status);
+          logContainer.className = 'error';
+        });
+        window.applicationCache.addEventListener('obsolete', function (e) {
+          appendLog("[AppCache] Manifest is obsolete.");
+        });
+        window.applicationCache.addEventListener('cached', function() {
+          appendLog("[AppCache] Caching complete.");
           goToAutoloader();
         });
-        window.applicationCache.addEventListener('error', cacheFailed);
+        window.applicationCache.addEventListener('noupdate', function() {
+          appendLog("[AppCache] No update needed.");
+          goToAutoloader();
+        });
+        window.applicationCache.addEventListener('updateready', function () {
+          if (window.applicationCache.status === window.applicationCache.UPDATEREADY) {
+            try {
+              window.applicationCache.swapCache();
+            } catch (e) { }
+            goToAutoloader();
+          }
+        });
       }
     })();
   </script>

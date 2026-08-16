@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PS5 SlopKit Jailbreak</title>
+  <link rel="stylesheet" href="main.css?v=final">
+</head>
+<body>
+  <div class="p-2">
+    <h1 class="text-center">PS5 SlopKit Jailbreak (9.00-12.00)</h1>
+    <p class="text-center" id="top-bar-text">Current Firmware: <span class="fw-bold" id="current-fw">Unknown</span></p>
+  </div>
+
+  <div id="main-content">
+    <div id="pre-jb-view" class="selected">
+      <a tabindex="0" class="btn fw-bold" id="run-jb"
+         href="slopkit/poops.html?go=1&amp;auto=1&amp;production=1&amp;trigger=netcontrol&amp;attempts=8&amp;only=ps0_preflight,ps1_prepare,ps3_stage0,ps4_validate,ps5_stage1,ps6_stage2,ps8_stage3,ps9_stage4,ps10_stage5&amp;log=debug&amp;payload=1&amp;v=final">Jailbreak</a>
+      <a tabindex="0" class="btn btn-secondary" id="run-sender"
+         href="slopkit/poops.html?go=1&amp;auto=1&amp;production=1&amp;trigger=netcontrol&amp;attempts=8&amp;only=ps0_preflight,ps1_prepare,ps3_stage0,ps4_validate,ps5_stage1,ps6_stage2,ps8_stage3,ps9_stage4,ps10_stage5&amp;log=debug&amp;payload=1&amp;reuse=1&amp;v=final">Payloads (sender)</a>
+    </div>
+  </div>
+
+  <div class="position-relative text-center p-2 mb-2">
+    <p class="text-secondary">Credits</p>
+    <p class="text-secondary mt-2">Jordy, Egy, Sonic, Yenyen, Zeco, Gezine, Echostretch, Ufm42, TheFloW, John Tornblom, Flatz, Idlesauce and PS5 R&amp;D Discord.</p>
+  </div>
+
+  <script>
+    try {
+      var firmwareMatch = /PlayStation 5\/(\d+\.\d+)/.exec(navigator.userAgent);
+      var firmware = firmwareMatch ? firmwareMatch[1] : "";
+      document.getElementById("current-fw").textContent = firmware || "Not detected";
+    } catch (e) { }
+    try { document.getElementById("run-jb").focus(); } catch (e) { }
+  </script>
+</body>
+</html>

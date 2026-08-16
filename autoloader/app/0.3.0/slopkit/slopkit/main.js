@@ -227,7 +227,7 @@ async function prepare(p) {
 
     }
 
-    let worker = new Worker("rop_slave.js");
+    let worker = new Worker("rop_slave.js?v=final");
 
     jbmark("PREP-PRE-WORKER-AWAIT", "next=await-wait_for_worker()-first-yield");
     await wait_for_worker();
@@ -342,4 +342,4 @@ async function prepare(p) {
 let fwScript = document.createElement('script');
 document.body.appendChild(fwScript);
 
-fwScript.setAttribute('src', `../offsets/${window.fw_str}.js?v=19`);
+fwScript.setAttribute('src', `../offsets/${window.fw_str}.js?v=final`);

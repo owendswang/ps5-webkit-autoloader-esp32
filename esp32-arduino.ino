@@ -13,7 +13,10 @@ httpd_handle_t httpsServer = NULL;
 
 static const char *AP_SSID = "ESP32_PORTAL";
 static const char *AP_PASSWORD = "12345678";
-static const char *PORTAL_REDIRECT_URL = "http://192.168.4.1/?v=0.2.1-202608141906";
+static const char *PORTAL_REDIRECT_URL = "http://192.168.4.1/?v=0.3.0-202608161305";
+
+static const char *PAYLOAD_MIRROR_PREFIX = "/ps5-payloads-mirror/";
+static const char *PAYLOAD_LOCAL_PREFIX = "/pldmrr/";
 
 static const IPAddress AP_IP(192, 168, 4, 1);
 static const IPAddress AP_GATEWAY(192, 168, 4, 1);
@@ -137,6 +140,19 @@ esp_err_t httpsFileHandler(httpd_req_t *req)
         Serial.printf("[HTTPS] UA: %s\n", buf);
 
     String path = normalizePath(req->uri);
+
+    if (path.startsWith(PAYLOAD_MIRROR_PREFIX))
+    {
+        String originalPath = path;
+        path = String(PAYLOAD_LOCAL_PREFIX) +
+               path.substring(strlen(PAYLOAD_MIRROR_PREFIX));
+
+        Serial.printf(
+            "[HTTPS] Rewrite: %s -> %s\n",
+            originalPath.c_str(),
+            path.c_str()
+        );
+    }
 
     File file;
 
@@ -465,6 +481,20 @@ void httpFileHandler()
     logHttpRequest();
 
     String path = normalizePath(webServer.uri().c_str());
+
+    if (path.startsWith(PAYLOAD_MIRROR_PREFIX))
+    {
+        String originalPath = path;
+
+        path = String(PAYLOAD_LOCAL_PREFIX) +
+               path.substring(strlen(PAYLOAD_MIRROR_PREFIX));
+
+        Serial.printf(
+            "[HTTP] Rewrite: %s -> %s\n",
+            originalPath.c_str(),
+            path.c_str()
+        );
+    }
 
     if (path.endsWith("/"))
     {
