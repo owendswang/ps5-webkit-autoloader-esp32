@@ -63,11 +63,70 @@ static void logRequest(Server &server) {
                   server.method() == HTTP_POST ? "POST" : "OTHER", server.uri().c_str());
 }
 
+static String buildPs4UpdateXml(const String &region) {
+    const String version = "05.050.000";
+    const String shortVersion = "05.050.000";
+    const String labelVersion = "5.05";
+    const String imageSize = "0";
+    const String imagePath = "";
+
+    return
+        "<?xml version=\"1.0\" ?>"
+        "<update_data_list>"
+        "<region id=\"" + region + "\">"
+        "<force_update>"
+        "<system "
+        "level0_system_ex_version=\"0\" "
+        "level0_system_version=\"" + version + "\" "
+        "level1_system_ex_version=\"0\" "
+        "level1_system_version=\"" + version + "\"/>"
+        "</force_update>"
+        "<system_pup "
+        "ex_version=\"0\" "
+        "label=\"" + labelVersion + "\" "
+        "sdk_version=\"" + shortVersion + "\" "
+        "version=\"" + version + "\">"
+        "<update_data update_type=\"full\">"
+        "<image size=\"" + imageSize + "\">" + imagePath + "</image>"
+        "</update_data>"
+        "</system_pup>"
+        "<recovery_pup type=\"default\">"
+        "<system_pup "
+        "ex_version=\"0\" "
+        "label=\"" + labelVersion + "\" "
+        "sdk_version=\"" + shortVersion + "\" "
+        "version=\"" + version + "\"/>"
+        "<image size=\"" + imageSize + "\">" + imagePath + "</image>"
+        "</recovery_pup>"
+        "</region>"
+        "</update_data_list>";
+}
+
+template <typename Server>
+static void networkTest(Server &server);
+
 template <typename Server>
 static void fileHandler(Server &server) {
     logHeap("file begin");
     logRequest(server);
     String path = normalizePath(server.uri());
+
+    if (path.startsWith("/update/ps4/list/")) {
+        int start = strlen("/update/ps4/list/");
+        int end = path.indexOf('/', start);
+        String region = end >= 0 ? path.substring(start, end) : path.substring(start);
+
+        Serial.printf("[HTTP PS4 UPDATE] region=%s uri=%s\n", region.c_str(), path.c_str());
+        noCache(server);
+        server.send(200, "text/xml", buildPs4UpdateXml(region));
+        return;
+    }
+
+    if (path.startsWith("/networktest/")) {
+        networkTest(server);
+        return;
+    }
+
     if (path.startsWith(PAYLOAD_MIRROR_PREFIX)) {
         String original = path;
         path = String(PAYLOAD_LOCAL_PREFIX) + path.substring(strlen(PAYLOAD_MIRROR_PREFIX));
@@ -76,10 +135,11 @@ static void fileHandler(Server &server) {
     if (path.endsWith("/")) path += "index.html";
     else if (!LittleFS.exists(path) && LittleFS.exists(path + "/index.html")) path += "/index.html";
 
-    bool gzip = false;
     File file = LittleFS.open(path + ".gz", "r");
-    if (file && !file.isDirectory()) gzip = true;
-    else { if (file) file.close(); file = LittleFS.open(path, "r"); }
+    if (!file || file.isDirectory()) {
+        if (file) file.close();
+        file = LittleFS.open(path, "r");
+    }
     if (!file || file.isDirectory()) {
         if (file) file.close();
         if (path.startsWith("/document/") && (path.indexOf("/ps5") >= 0 || path.indexOf("/ps4") >= 0)) {
@@ -88,15 +148,7 @@ static void fileHandler(Server &server) {
         } else server.send(404, "text/plain", "404 Not Found");
         return;
     }
-    if (gzip) server.sendHeader("Content-Encoding", "gzip");
-    server.setContentLength(file.size());
-    server.send(200, contentType(path), "");
-    uint8_t buffer[1024];
-    while (file.available()) {
-        size_t n = file.read(buffer, sizeof(buffer));
-        if (n) server.client().write(buffer, n);
-        yield();
-    }
+    server.streamFile(file, contentType(path));
     file.close();
     logHeap("file end");
 }
@@ -117,7 +169,6 @@ static void setupRoutes(Server &server) {
     server.on("/ncsi.txt", HTTP_GET, [&server]() { noCache(server); server.send(200, "text/plain", "Microsoft NCSI"); });
     server.on("/redirect", HTTP_GET, [&server]() { noCache(server); server.send(200, "text/plain", "Success"); });
     server.on("/netstart/icst", HTTP_GET, [&server]() { noCache(server); server.send(200, "text/plain", "Success"); });
-    server.on("/networktest/*", HTTP_ANY, [&server]() { networkTest(server); });
     server.onNotFound([&server]() { fileHandler(server); });
     server.begin();
 }
@@ -139,6 +190,8 @@ void setup() {
     bool ap = WiFi.softAP(AP_SSID, AP_PASSWORD);
     Serial.printf("softAP: %s, IP: %s\n", ap ? "OK" : "FAILED", WiFi.softAPIP().toString().c_str());
     if (!ap) while (true) delay(1000);
+    dnsServer.setTTL(30);
+    dnsServer.setErrorReplyCode(DNSReplyCode::ServerFailure);
     Serial.printf("DNS: %s\n", dnsServer.start(53, "*", AP_IP) ? "OK" : "FAILED");
     setupRoutes(webServer);
     httpsServer.getServer().setECCert(&serverCertificate, BR_KEYTYPE_KEYX | BR_KEYTYPE_SIGN, &serverPrivateKey);
