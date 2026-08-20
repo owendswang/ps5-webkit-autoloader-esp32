@@ -2,9 +2,7 @@
 #include <ESP8266WiFi.h>
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
-#include <ESP8266WebServerSecure.h>
 #include <LittleFS.h>
-#include "server_certs.h"
 
 static const char *AP_SSID = "ESP32_PORTAL";
 static const char *AP_PASSWORD = "12345678";
@@ -18,9 +16,6 @@ static const char *NO_CACHE_VALUE = "no-store, no-cache, must-revalidate, max-ag
 
 DNSServer dnsServer;
 ESP8266WebServer webServer(80);
-BearSSL::ESP8266WebServerSecure httpsServer(443);
-BearSSL::X509List serverCertificate((const char *)server_crt);
-BearSSL::PrivateKey serverPrivateKey((const char *)server_key);
 
 static void logHeap(const char *where) {
     Serial.printf("[HEAP] %s: free=%u\n", where, ESP.getFreeHeap());
@@ -194,14 +189,11 @@ void setup() {
     dnsServer.setErrorReplyCode(DNSReplyCode::ServerFailure);
     Serial.printf("DNS: %s\n", dnsServer.start(53, "*", AP_IP) ? "OK" : "FAILED");
     setupRoutes(webServer);
-    httpsServer.getServer().setECCert(&serverCertificate, BR_KEYTYPE_KEYX | BR_KEYTYPE_SIGN, &serverPrivateKey);
-    setupRoutes(httpsServer);
-    Serial.println("HTTP/HTTPS: OK\nREADY");
+    Serial.println("HTTP: OK\nREADY");
 }
 
 void loop() {
     dnsServer.processNextRequest();
     webServer.handleClient();
-    httpsServer.handleClient();
     delay(1);
 }

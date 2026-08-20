@@ -10,10 +10,6 @@ SOURCE_DATA_DIR := $(PROJECT_DIR)/henloader
 MINIFIED_DATA_DIR := $(PROJECT_DIR)/henloader.mini
 DATA_DIR := $(PROJECT_DIR)/data
 BUILD_DIR := $(PROJECT_DIR)/build
-SERVER_CERT := $(PROJECT_DIR)/server_x509.crt
-SERVER_KEY := $(PROJECT_DIR)/server_rsa.key
-SERVER_HEADER := $(PROJECT_DIR)/server_certs.h
-CERT_EMBEDDER := $(PROJECT_DIR)/embed_cert.py
 DATA_PREPARER := $(PROJECT_DIR)/prepare-data.sh
 COMMON_BUILD_DIR := $(BUILD_DIR)/common
 PICO_BUILD_DIR := $(BUILD_DIR)/pico
@@ -145,7 +141,6 @@ check-littlefs: check-data
 
 check: check-littlefs
 	@command -v arduino-cli >/dev/null
-	command -v openssl >/dev/null
 	command -v python3 >/dev/null
 	test -d "$(CORE_DIR)" || { echo "Error: esp32:esp32@$(CORE_VERSION) is not installed" >&2; exit 1; }
 	test -f "$(ESPTOOL)" || { echo "Error: $(ESPTOOL) was not found" >&2; exit 1; }
@@ -159,38 +154,10 @@ check-8266: check-data
 	test -f "$(ESP8266_ESPTOOL)" || { echo "Error: ESP8266 esptool was not found" >&2; exit 1; }
 	test -x "$(ESP8266_MKLITTLEFS)" || { echo "Error: ESP8266 mklittlefs was not found" >&2; exit 1; }
 	test -f "$(PROJECT_DIR)/esp8266-arduino.ino"
-	test -f "$(PROJECT_DIR)/server_certs.h"
-
-$(SERVER_CERT) $(SERVER_KEY) &:
-	@echo "Generating a self-signed HTTPS certificate..."
-	openssl req -new -x509 \
-		-newkey rsa:2048 \
-		-sha256 \
-		-days 3650 \
-		-nodes \
-		-keyout "$(SERVER_KEY)" \
-		-out "$(SERVER_CERT)" \
-		-subj "/CN=manuals.playstation.net" \
-		-addext "subjectAltName=DNS:manuals.playstation.net,IP:192.168.4.1"
-	chmod 600 "$(SERVER_KEY)"
-
-#$(SERVER_CERT) $(SERVER_KEY) &:
-#	@echo "Generating a self-signed HTTPS certificate..."
-#	openssl req -x509 -newkey rsa:2048 -nodes \
-#		-keyout "$(SERVER_KEY)" \
-#		-out "$(SERVER_CERT)" \
-#  	-days 3650 \
-#  	-subj "/CN=manuals.playstation.net" \
-#  	-addext "subjectAltName=DNS:manuals.playstation.net,IP:192.168.4.1"
-#	chmod 600 "$(SERVER_KEY)"
-
-$(SERVER_HEADER): $(SERVER_CERT) $(SERVER_KEY) $(CERT_EMBEDDER)
-	@python3 "$(CERT_EMBEDDER)" "$(SERVER_CERT)" "$(SERVER_KEY)" "$(SERVER_HEADER)"
-
-$(PICO_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(SERVER_HEADER) $(PROJECT_DIR)/partitions.csv Makefile
+$(PICO_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(PROJECT_DIR)/partitions.csv Makefile
 	@rm -rf "$(PICO_SKETCH_DIR)"
 	mkdir -p "$(PICO_SKETCH_DIR)"
-	cp "$(PROJECT_DIR)/$(PROJECT_NAME).ino" "$(SERVER_HEADER)" "$(PICO_SKETCH_DIR)/"
+	cp "$(PROJECT_DIR)/$(PROJECT_NAME).ino" "$(PICO_SKETCH_DIR)/"
 	cp "$(PROJECT_DIR)/partitions.csv" "$(PICO_SKETCH_DIR)/"
 	arduino-cli compile \
 	    --fqbn "$(PICO_FQBN)" \
@@ -201,10 +168,10 @@ $(PICO_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(SERVER_HEADER) $(PROJECT_DIR)/
 	size=$$(stat -c %s "$(PICO_APP)")
 	test "$$size" -le "$(APP_PARTITION_SIZE)" || { echo "Error: Pico application exceeds the 1 MB partition: $$size bytes" >&2; exit 1; }
 
-$(S2_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(SERVER_HEADER) $(PROJECT_DIR)/partitions.csv Makefile
+$(S2_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(PROJECT_DIR)/partitions.csv Makefile
 	@rm -rf "$(S2_SKETCH_DIR)"
 	mkdir -p "$(S2_SKETCH_DIR)"
-	cp "$(PROJECT_DIR)/$(PROJECT_NAME).ino" "$(SERVER_HEADER)" "$(S2_SKETCH_DIR)/"
+	cp "$(PROJECT_DIR)/$(PROJECT_NAME).ino" "$(S2_SKETCH_DIR)/"
 	cp "$(PROJECT_DIR)/partitions.csv" "$(S2_SKETCH_DIR)/"
 	arduino-cli compile \
 	    --fqbn "$(S2_FQBN)" \
@@ -215,10 +182,10 @@ $(S2_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(SERVER_HEADER) $(PROJECT_DIR)/pa
 	size=$$(stat -c %s "$(S2_APP)")
 	test "$$size" -le "$(APP_PARTITION_SIZE)" || { echo "Error: S2 application exceeds the 1 MB partition: $$size bytes" >&2; exit 1; }
 
-$(S3_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(SERVER_HEADER) $(PROJECT_DIR)/partitions.csv Makefile
+$(S3_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(PROJECT_DIR)/partitions.csv Makefile
 	@rm -rf "$(S3_SKETCH_DIR)"
 	mkdir -p "$(S3_SKETCH_DIR)"
-	cp "$(PROJECT_DIR)/$(PROJECT_NAME).ino" "$(SERVER_HEADER)" "$(S3_SKETCH_DIR)/"
+	cp "$(PROJECT_DIR)/$(PROJECT_NAME).ino" "$(S3_SKETCH_DIR)/"
 	cp "$(PROJECT_DIR)/partitions.csv" "$(S3_SKETCH_DIR)/"
 	arduino-cli compile \
 	    --fqbn "$(S3_FQBN)" \
@@ -229,10 +196,10 @@ $(S3_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(SERVER_HEADER) $(PROJECT_DIR)/pa
 	size=$$(stat -c %s "$(S3_APP)")
 	test "$$size" -le "$(APP_PARTITION_SIZE)" || { echo "Error: S3 application exceeds the 1 MB partition: $$size bytes" >&2; exit 1; }
 
-$(PICO_8M_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(SERVER_HEADER) $(PROJECT_DIR)/partitions-8m.csv Makefile
+$(PICO_8M_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(PROJECT_DIR)/partitions-8m.csv Makefile
 	@rm -rf "$(PICO_8M_SKETCH_DIR)" "$(PICO_8M_OUTPUT_DIR)"
 	mkdir -p "$(PICO_8M_SKETCH_DIR)" "$(PICO_8M_OUTPUT_DIR)"
-	cp "$(PROJECT_DIR)/$(PROJECT_NAME).ino" "$(SERVER_HEADER)" "$(PICO_8M_SKETCH_DIR)/"
+	cp "$(PROJECT_DIR)/$(PROJECT_NAME).ino" "$(PICO_8M_SKETCH_DIR)/"
 	cp "$(PROJECT_DIR)/partitions-8m.csv" "$(PICO_8M_SKETCH_DIR)/partitions.csv"
 	arduino-cli compile \
 	    --fqbn "$(PICO_8M_FQBN)" \
@@ -243,10 +210,10 @@ $(PICO_8M_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(SERVER_HEADER) $(PROJECT_DI
 	size=$$(stat -c %s "$(PICO_8M_APP)")
 	test "$$size" -le "$(PICO_8M_APP_PARTITION_SIZE)" || { echo "Error: Pico 8 MB application exceeds the 1.5 MB partition: $$size bytes" >&2; exit 1; }
 
-$(C3_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(SERVER_HEADER) $(PROJECT_DIR)/partitions.csv Makefile
+$(C3_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(PROJECT_DIR)/partitions.csv Makefile
 	@rm -rf "$(C3_SKETCH_DIR)"
 	mkdir -p "$(C3_SKETCH_DIR)"
-	cp "$(PROJECT_DIR)/$(PROJECT_NAME).ino" "$(SERVER_HEADER)" "$(C3_SKETCH_DIR)/"
+	cp "$(PROJECT_DIR)/$(PROJECT_NAME).ino" "$(C3_SKETCH_DIR)/"
 	cp "$(PROJECT_DIR)/partitions.csv" "$(C3_SKETCH_DIR)/"
 	arduino-cli compile \
 	    --fqbn "$(C3_FQBN)" \
@@ -257,10 +224,10 @@ $(C3_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(SERVER_HEADER) $(PROJECT_DIR)/pa
 	size=$$(stat -c %s "$(C3_APP)")
 	test "$$size" -le "$(APP_PARTITION_SIZE)" || { echo "Error: C3 application exceeds the 1 MB partition: $$size bytes" >&2; exit 1; }
 
-$(ESP8266_APP): $(PROJECT_DIR)/esp8266-arduino.ino $(SERVER_HEADER) Makefile
+$(ESP8266_APP): $(PROJECT_DIR)/esp8266-arduino.ino Makefile
 	@rm -rf "$(ESP8266_SKETCH_DIR)" "$(ESP8266_BUILD_DIR)/output"
 	mkdir -p "$(ESP8266_SKETCH_DIR)" "$(ESP8266_BUILD_DIR)/output"
-	cp "$(PROJECT_DIR)/esp8266-arduino.ino" "$(PROJECT_DIR)/server_certs.h" "$(ESP8266_SKETCH_DIR)/"
+	cp "$(PROJECT_DIR)/esp8266-arduino.ino" "$(ESP8266_SKETCH_DIR)/"
 	arduino-cli compile --fqbn "$(ESP8266_FQBN)" --output-dir "$(ESP8266_BUILD_DIR)/output" "$(ESP8266_SKETCH_DIR)"
 	size=$$(stat -c %s "$(ESP8266_APP)")
 	test "$$size" -le 1044464 || { echo "Error: ESP8266 application exceeds the 4M3M sketch area: $$size bytes" >&2; exit 1; }
