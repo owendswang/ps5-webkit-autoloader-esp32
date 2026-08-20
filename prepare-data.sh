@@ -105,7 +105,6 @@ else
         -name '*.svg' -o \
         -name '*.css' -o \
         -name 'version' -o \
-        -name '__complete__' -o \
         -name '*.json' \
     \) -print0)
 fi

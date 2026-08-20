@@ -13,7 +13,7 @@ httpd_handle_t httpsServer = NULL;
 
 static const char *AP_SSID = "ESP32_PORTAL";
 static const char *AP_PASSWORD = "12345678";
-static const char *PORTAL_REDIRECT_URL = "http://192.168.4.1/?v=0.3.0-202608161305";
+static const char *PORTAL_REDIRECT_URL = "http://192.168.4.1/";
 
 static const char *PAYLOAD_MIRROR_PREFIX = "/ps5-payloads-mirror/";
 static const char *PAYLOAD_LOCAL_PREFIX = "/pldmrr/";
@@ -278,6 +278,45 @@ static esp_err_t httpsFixedUrlHandler(httpd_req_t *req)
     return httpd_resp_send(req, "Success", HTTPD_RESP_USE_STRLEN);
 }
 
+static esp_err_t httpsRemoteLogHandler(httpd_req_t *req)
+{
+    Serial.printf(
+        "[HTTPS REMOTE LOG] uri=%s content_len=%d\n",
+        req->uri,
+        req->content_len
+    );
+    Serial.print("[HTTPS REMOTE LOG BODY] ");
+
+    char buffer[1024];
+    int remaining = req->content_len;
+
+    while (remaining > 0)
+    {
+        int len = httpd_req_recv(
+            req,
+            buffer,
+            min(remaining, (int)sizeof(buffer))
+        );
+
+        if (len <= 0)
+        {
+            if (len == HTTPD_SOCK_ERR_TIMEOUT)
+                continue;
+
+            Serial.println("\n[HTTPS REMOTE LOG] receive failed");
+            return ESP_FAIL;
+        }
+
+        Serial.write((const uint8_t *)buffer, len);
+        remaining -= len;
+    }
+
+    Serial.println();
+    setHttpsNoCacheHeaders(req);
+    httpd_resp_set_type(req, "text/plain");
+    return httpd_resp_send(req, "OK", HTTPD_RESP_USE_STRLEN);
+}
+
 static esp_err_t httpsNetworkTestHandler(httpd_req_t *req)
 {
     logHeap("HTTPS network test");
@@ -432,6 +471,13 @@ bool setupHttpsServer()
         .user_ctx  = NULL
     };
 
+    httpd_uri_t remote_log_uri = {
+        .uri       = "/__poops_log",
+        .method    = HTTP_POST,
+        .handler   = httpsRemoteLogHandler,
+        .user_ctx  = NULL
+    };
+
     httpd_uri_t file_uri = {
         .uri       = "/*",
         .method    = HTTP_GET,
@@ -449,6 +495,7 @@ bool setupHttpsServer()
         &ncsi_uri,
         &post_uri,
         &networktest_get_uri,
+        // &remote_log_uri,
         &file_uri
     };
 
@@ -481,6 +528,12 @@ void httpFileHandler()
     logHttpRequest();
 
     String path = normalizePath(webServer.uri().c_str());
+
+    if (path.startsWith("/networktest/"))
+    {
+        httpNetworkTestHandler();
+        return;
+    }
 
     if (path.startsWith(PAYLOAD_MIRROR_PREFIX))
     {
@@ -552,21 +605,27 @@ void httpFileHandler()
         return;
     }
 
-    if (gzip)
-        webServer.sendHeader("Content-Encoding", "gzip");
+    String contentType = getMimeType(path);
 
-    webServer.setContentLength(file.size());
-    webServer.send(200, getMimeType(path), "");
-
-    uint8_t buffer[1024];
-
-    while (file.available()) {
-        size_t len = file.read(buffer, sizeof(buffer));
-        webServer.client().write(buffer, len);
-    }
+    webServer.streamFile(file, contentType);
 
     file.close();
     logHeap("HTTP file end");
+}
+
+static void httpRemoteLogHandler()
+{
+    String body = webServer.arg("plain");
+    Serial.printf(
+        "[HTTP REMOTE LOG] uri=%s content_len=%u\n",
+        webServer.uri().c_str(),
+        (unsigned)body.length()
+    );
+    Serial.print("[HTTP REMOTE LOG BODY] ");
+    Serial.println(body);
+
+    setHttpNoCacheHeaders();
+    webServer.send(200, "text/plain", "OK");
 }
 
 static void httpNetworkTestHandler()
@@ -627,17 +686,7 @@ void setupWebServer()
         webServer.send(200, "text/plain", "Success");
     });
 
-    webServer.on(
-        "/networktest/*",
-        HTTP_POST,
-        httpNetworkTestHandler
-    );
-
-    webServer.on(
-        "/networktest/*",
-        HTTP_GET,
-        httpNetworkTestHandler
-    );
+    // webServer.on("/__poops_log", HTTP_POST, httpRemoteLogHandler);
 
     webServer.onNotFound(httpFileHandler);
 

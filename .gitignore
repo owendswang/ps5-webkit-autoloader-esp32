@@ -1,7 +1,7 @@
 /build
 /data
-/server.crt
-/server.key
+/*.crt
+/*.key
 /server_certs.h
 __pycache__/
 *.pyc
@@ -9,5 +9,5 @@ __pycache__/
 *.elf
 *.bak
 /slopkit.*
-/autoloader-v0.2.1
+/autoloader-*
 /autoloader.mini

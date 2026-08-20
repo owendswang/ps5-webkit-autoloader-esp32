@@ -8,7 +8,7 @@
 
 static const char *AP_SSID = "ESP32_PORTAL";
 static const char *AP_PASSWORD = "12345678";
-static const char *PORTAL_REDIRECT_URL = "http://192.168.4.1/?v=0.3.0-202608161305";
+static const char *PORTAL_REDIRECT_URL = "http://192.168.4.1/";
 static const char *PAYLOAD_MIRROR_PREFIX = "/ps5-payloads-mirror/";
 static const char *PAYLOAD_LOCAL_PREFIX = "/pldmrr/";
 static const IPAddress AP_IP(192, 168, 4, 1);
@@ -76,10 +76,11 @@ static void fileHandler(Server &server) {
     if (path.endsWith("/")) path += "index.html";
     else if (!LittleFS.exists(path) && LittleFS.exists(path + "/index.html")) path += "/index.html";
 
-    bool gzip = false;
     File file = LittleFS.open(path + ".gz", "r");
-    if (file && !file.isDirectory()) gzip = true;
-    else { if (file) file.close(); file = LittleFS.open(path, "r"); }
+    if (!file || file.isDirectory()) {
+        if (file) file.close();
+        file = LittleFS.open(path, "r");
+    }
     if (!file || file.isDirectory()) {
         if (file) file.close();
         if (path.startsWith("/document/") && path.indexOf("/ps5") >= 0) {
@@ -88,17 +89,24 @@ static void fileHandler(Server &server) {
         } else server.send(404, "text/plain", "404 Not Found");
         return;
     }
-    if (gzip) server.sendHeader("Content-Encoding", "gzip");
-    server.setContentLength(file.size());
-    server.send(200, contentType(path), "");
-    uint8_t buffer[1024];
-    while (file.available()) {
-        size_t n = file.read(buffer, sizeof(buffer));
-        if (n) server.client().write(buffer, n);
-        yield();
-    }
+    server.streamFile(file, contentType(path));
     file.close();
     logHeap("file end");
+}
+
+template <typename Server>
+static void remoteLog(Server &server) {
+    String body = server.arg("plain");
+    Serial.printf(
+        "[REMOTE LOG] uri=%s content_len=%u\n",
+        server.uri().c_str(),
+        (unsigned)body.length()
+    );
+    Serial.print("[REMOTE LOG BODY] ");
+    Serial.println(body);
+
+    noCache(server);
+    server.send(200, "text/plain", "OK");
 }
 
 template <typename Server>
@@ -117,6 +125,7 @@ static void setupRoutes(Server &server) {
     server.on("/ncsi.txt", HTTP_GET, [&server]() { noCache(server); server.send(200, "text/plain", "Microsoft NCSI"); });
     server.on("/redirect", HTTP_GET, [&server]() { noCache(server); server.send(200, "text/plain", "Success"); });
     server.on("/netstart/icst", HTTP_GET, [&server]() { noCache(server); server.send(200, "text/plain", "Success"); });
+    // server.on("/__poops_log", HTTP_POST, [&server]() { remoteLog(server); });
     server.on("/networktest/*", HTTP_ANY, [&server]() { networkTest(server); });
     server.onNotFound([&server]() { fileHandler(server); });
     server.begin();
