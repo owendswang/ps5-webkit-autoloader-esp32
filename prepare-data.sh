@@ -41,7 +41,7 @@ minimize_file() {
     local tmp_file="${file}.minimize.tmp"
 
     case "$file" in
-        *.js)
+        *.js|*.mjs)
             # Terser only reformats here; compression and name mangling are opt-in.
             terser "$file" --output "$tmp_file"
             ;;
@@ -82,11 +82,12 @@ cp -a "$SOURCE_DIR/." "$OUTPUT_DIR/"
 find "$OUTPUT_DIR" -type f -name '*.gz' -delete
 
 if [ "$MODE" = minimize ]; then
-    echo "Minimizing JS, CSS, HTML, JSON and SVG files..."
+    echo "Minimizing JS, MJS, CSS, HTML, JSON and SVG files..."
     while IFS= read -r -d '' file; do
         minimize_file "$file"
     done < <(find "$OUTPUT_DIR" -type f \( \
         -name '*.js' -o \
+        -name '*.mjs' -o \
         -name '*.css' -o \
         -name '*.html' -o \
         -name '*.json' -o \
@@ -99,9 +100,12 @@ else
     done < <(find "$OUTPUT_DIR" -type f \( \
         -name '*.html' -o \
         -name '*.js' -o \
+        -name '*.mjs' -o \
         -name '*.elf' -o \
         -name '*.bin' -o \
         -name 'cache.appcache' -o \
+        -name '*.cache' -o \
+        -name '*.manifest' -o \
         -name '*.svg' -o \
         -name '*.css' -o \
         -name 'version' -o \

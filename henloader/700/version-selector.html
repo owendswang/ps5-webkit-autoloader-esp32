@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlayStation Pulse PSFree Host 7.xx-8.xx - Version Selection</title>
+    <style>
+        :root {
+            --bg: #050706;
+            --panel: #080c0a;
+            --panel-raised: #0d1510;
+            --line: #34443a;
+            --line-bright: #607b68;
+            --text: #f1f6f2;
+            --muted: #b4c1b8;
+            --dim: #86958b;
+            --green: #73f5a6;
+            --green-soft: #36bd77;
+            --amber: #dfbd73;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            background: var(--bg);
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: var(--bg);
+            background-image: linear-gradient(rgba(115, 245, 166, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(115, 245, 166, 0.03) 1px, transparent 1px);
+            background-size: 32px 32px;
+            color: var(--text);
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+            font-size: 17px;
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        .bg-decoration {
+            display: none;
+        }
+
+        .container {
+            width: min(100% - 64px, 1120px);
+            display: flex;
+            flex: 1 0 auto;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 0;
+            margin: 0 auto;
+            padding: 26px 0 28px;
+        }
+
+        .header-section {
+            background: rgba(8, 12, 10, 0.92);
+            border: 1px solid var(--line);
+            padding: 20px 28px 24px;
+            position: relative;
+        }
+
+        .header-section::before {
+            color: var(--green);
+            content: "●  PS4 / PSFREE HOST";
+            display: block;
+            font-size: 14px;
+            letter-spacing: 0.12em;
+            margin-bottom: 18px;
+        }
+
+        .header-section::after {
+            color: var(--dim);
+            content: "SYS / READY   //   FW 7.xx-8.xx";
+            font-size: 13px;
+            letter-spacing: 0.08em;
+            position: absolute;
+            right: 32px;
+            top: 21px;
+        }
+
+        .main-title {
+            color: var(--text);
+            font-size: clamp(32px, 5vw, 50px);
+            font-weight: 400;
+            letter-spacing: -0.07em;
+            line-height: 1.05;
+            max-width: 900px;
+        }
+
+        .main-title::before {
+            color: var(--green);
+            content: "> ";
+        }
+
+        .subtitle {
+            color: var(--green);
+            font-size: 17px;
+            letter-spacing: 0.08em;
+            margin-top: 14px;
+            text-transform: uppercase;
+        }
+
+        .description {
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.55;
+            margin-top: 8px;
+            max-width: 650px;
+        }
+
+        .version-selection {
+            background: rgba(8, 12, 10, 0.82);
+            border: 1px solid var(--line);
+            margin-top: 20px;
+            padding: 18px 22px 16px;
+        }
+
+        .section-title {
+            align-items: center;
+            color: var(--muted);
+            display: flex;
+            font-size: 14px;
+            justify-content: space-between;
+            letter-spacing: 0.12em;
+            border-bottom: 1px solid var(--line);
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .section-title::before {
+            color: var(--dim);
+            content: "$ select --goldhen";
+            font-size: 13px;
+            letter-spacing: 0.04em;
+            order: 1;
+            text-transform: none;
+        }
+
+        .section-title::after {
+            content: "";
+        }
+
+        .version-grid {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .version-card {
+            align-items: center;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-left: 2px solid var(--line-bright);
+            cursor: pointer;
+            display: grid;
+            gap: 12px 18px;
+            grid-template-columns: 42px minmax(0, 1fr);
+            grid-template-rows: auto 1fr auto;
+            min-height: 184px;
+            padding: 20px 22px;
+            text-align: left;
+            transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+        }
+
+        .version-card:hover,
+        .version-card:focus {
+            background: var(--panel-raised);
+            border-color: var(--green-soft);
+            border-left-color: var(--green);
+            outline: none;
+        }
+
+        .version-card:focus-visible {
+            box-shadow: 0 0 0 1px var(--green), 0 0 24px rgba(134, 245, 175, 0.08);
+        }
+
+        .version-card.latest {
+            border-left-color: var(--green);
+        }
+
+        .card-index {
+            align-self: start;
+            color: var(--dim);
+            font-size: 15px;
+            grid-row: 1 / span 3;
+            padding-top: 2px;
+        }
+
+        .version-card.latest .card-index {
+            color: var(--green);
+        }
+
+        .version-badge {
+            color: var(--amber);
+            display: block;
+            font-size: 13px;
+            letter-spacing: 0.1em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .version-badge.latest {
+            color: var(--green);
+        }
+
+        .version-title {
+            color: var(--text);
+            font-size: 21px;
+            font-weight: 400;
+        }
+
+        .version-number {
+            color: var(--green);
+            font-size: 16px;
+            margin-left: 8px;
+        }
+
+        .version-description {
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.5;
+            margin-top: 8px;
+        }
+
+        .card-action {
+            color: var(--dim);
+            font-size: 14px;
+            grid-column: 2;
+            letter-spacing: 0.08em;
+            margin-top: 12px;
+            white-space: nowrap;
+        }
+
+        .version-card:hover .card-action,
+        .version-card:focus .card-action {
+            color: var(--green);
+        }
+
+        .version-selection::after {
+            color: var(--muted);
+            content: "↑↓ navigate   enter select";
+            display: block;
+            font-size: 13px;
+            margin-top: 10px;
+            text-align: right;
+        }
+
+        .credits {
+            border-top: 1px solid var(--line);
+            color: var(--muted);
+            flex: 0 0 auto;
+            font-size: 13px;
+            margin: 0 auto;
+            padding: 8px 20px 10px;
+            text-align: center;
+            width: min(100% - 64px, 1120px);
+        }
+
+        .credits-line {
+            display: inline;
+        }
+
+        .credits-line + .credits-line::before {
+            color: var(--line-bright);
+            content: "  //  ";
+        }
+
+        .credit-label {
+            color: var(--muted);
+        }
+
+        .credits a {
+            color: var(--text);
+            text-decoration: none;
+        }
+
+        .credits a:hover,
+        .credits a:focus {
+            color: var(--green);
+        }
+
+        @media (max-width: 760px) {
+            .container {
+                min-height: 0;
+                padding: 22px 0 20px;
+                width: min(100% - 32px, 560px);
+            }
+
+            .header-section {
+                padding: 22px 20px 26px;
+            }
+
+            .header-section::after {
+                display: none;
+            }
+
+            .main-title {
+                font-size: clamp(32px, 10vw, 48px);
+            }
+
+            .section-title {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .section-title::before {
+                order: 0;
+            }
+
+            .version-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .version-card {
+                gap: 12px;
+                grid-template-columns: 30px minmax(0, 1fr);
+                min-height: 190px;
+                padding: 22px 18px;
+            }
+
+            .version-selection {
+                padding: 18px 16px 16px;
+            }
+
+            .credits {
+                width: min(100% - 32px, 560px);
+            }
+
+            .card-action {
+                display: none;
+            }
+
+            .version-description {
+                max-width: 100%;
+            }
+
+            .version-selection::after {
+                text-align: left;
+            }
+
+            .credits-line {
+                display: block;
+            }
+
+            .credits-line + .credits-line::before {
+                content: "";
+                display: block;
+                height: 4px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-decoration" aria-hidden="true">
+        <div class="floating-shape shape-1"></div>
+        <div class="floating-shape shape-2"></div>
+        <div class="floating-shape shape-3"></div>
+    </div>
+
+    <main class="container">
+        <header class="header-section">
+            <h1 class="main-title">PlayStation Pulse PSFree Host 7.xx-8.xx</h1>
+            <p class="subtitle">Choose Your GoldHEN Version</p>
+            <p class="description">Select the GoldHEN version to cache and use. Each version has different features and compatibility.</p>
+        </header>
+
+        <section class="version-selection" aria-label="GoldHEN versions">
+            <div class="section-title">Available Versions</div>
+            <div class="version-grid">
+                <div class="version-card latest" onclick="selectVersion('v2.4b18.10')" tabindex="0"
+                    data-version="latest">
+                    <span class="card-index">01</span>
+                    <div>
+                        <div class="version-badge latest">Latest</div>
+                        <div class="version-title">GoldHEN <span class="version-number">v2.4b18.10</span></div>
+                        <div class="version-description">Latest release with improved stability, new features, and better compatibility. Recommended for most users.</div>
+                    </div>
+                    <span class="card-action">[ SELECT ]</span>
+                </div>
+
+                <div class="version-card" onclick="selectVersion('v2.4b18.5')" tabindex="0" data-version="stable">
+                    <span class="card-index">02</span>
+                    <div>
+                        <div class="version-badge">Stable</div>
+                        <div class="version-title">GoldHEN <span class="version-number">v2.4b18.5</span></div>
+                        <div class="version-description">Previous stable release with proven reliability. Choose this if the latest version causes issues or you prefer maximum stability.</div>
+                    </div>
+                    <span class="card-action">[ SELECT ]</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="credits">
+        <div class="credits-line">
+            <span class="credit-label">Premium Game Servers -</span>
+            <a href="https://nodeplay.net/" class="nodeplay-link">NodePlay</a>
+        </div>
+        <div class="credits-line">
+            <span class="credit-label">Author:</span>
+            <a href="https://t.me/sudoBlackArch" class="telegram-link">BlackArch</a>
+            <span style="margin: 0 1rem;">•</span>
+            <span class="credit-label">Telegram:</span>
+            <a href="https://t.me/PlayStation_Pulse" class="credit-link">PlayStation Pulse</a>
+        </div>
+    </footer>
+
+    <script>
+        function selectVersion(version) {
+            // Store the selected version in localStorage
+            localStorage.setItem('selectedGoldHENVersion', version);
+
+            // Redirect to appropriate cache page based on version
+            if (version === 'v2.4b18.10') {
+                window.location.href = 'cache.html';
+            } else if (version === 'v2.4b18.5') {
+                window.location.href = 'cache5.html';
+            }
+        }
+
+        // Gamepad navigation
+        let currentFocus = 0;
+        const cards = document.querySelectorAll('.version-card');
+
+        // Handle keyboard navigation
+        document.addEventListener('keydown', function (event) {
+            switch (event.key) {
+                case 'ArrowLeft':
+                case 'ArrowUp':
+                    event.preventDefault();
+                    currentFocus = currentFocus > 0 ? currentFocus - 1 : cards.length - 1;
+                    cards[currentFocus].focus();
+                    break;
+                case 'ArrowRight':
+                case 'ArrowDown':
+                    event.preventDefault();
+                    currentFocus = currentFocus < cards.length - 1 ? currentFocus + 1 : 0;
+                    cards[currentFocus].focus();
+                    break;
+                case 'Enter':
+                case ' ':
+                    event.preventDefault();
+                    cards[currentFocus].click();
+                    break;
+            }
+        });
+
+        // Track focus changes
+        cards.forEach((card, index) => {
+            card.addEventListener('focus', function () {
+                currentFocus = index;
+            });
+
+            // Handle Enter key on focused element
+            card.addEventListener('keydown', function (event) {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    this.click();
+                }
+            });
+        });
+
+        // Add click animation effect
+        document.querySelectorAll('.version-card').forEach(card => {
+            card.addEventListener('mousedown', function () {
+                this.style.transform = 'translateY(-2px) scale(0.98)';
+            });
+
+            card.addEventListener('mouseup', function () {
+                this.style.transform = 'translateY(-5px) scale(1)';
+            });
+
+            card.addEventListener('mouseleave', function () {
+                this.style.transform = 'translateY(0px) scale(1)';
+            });
+
+            card.addEventListener('blur', function () {
+                this.style.transform = 'translateY(0px) scale(1)';
+            });
+        });
+    </script>
+</body>
+
+</html>

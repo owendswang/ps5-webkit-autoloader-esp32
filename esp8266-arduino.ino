@@ -8,7 +8,7 @@
 
 static const char *AP_SSID = "ESP32_PORTAL";
 static const char *AP_PASSWORD = "12345678";
-static const char *PORTAL_REDIRECT_URL = "http://192.168.4.1/?v=0.3.0-202608161305";
+static const char *PORTAL_REDIRECT_URL = "http://192.168.4.1/";
 static const char *PAYLOAD_MIRROR_PREFIX = "/ps5-payloads-mirror/";
 static const char *PAYLOAD_LOCAL_PREFIX = "/pldmrr/";
 static const IPAddress AP_IP(192, 168, 4, 1);
@@ -82,7 +82,7 @@ static void fileHandler(Server &server) {
     else { if (file) file.close(); file = LittleFS.open(path, "r"); }
     if (!file || file.isDirectory()) {
         if (file) file.close();
-        if (path.startsWith("/document/") && path.indexOf("/ps5") >= 0) {
+        if (path.startsWith("/document/") && (path.indexOf("/ps5") >= 0 || path.indexOf("/ps4") >= 0)) {
             server.sendHeader("Location", PORTAL_REDIRECT_URL, true);
             server.send(302, "text/plain", "");
         } else server.send(404, "text/plain", "404 Not Found");

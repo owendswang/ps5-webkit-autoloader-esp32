@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en" manifest="PSPulse.manifest">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlayStation Pulse PSFree Host 9.xx - Auto Cache</title>
+    <script>history.replaceState(null, null, 'index.html');</script>
+    <style>
+        :root { --bg:#050706; --panel:#080c0a; --line:#34443a; --line-bright:#607b68; --text:#f1f6f2; --muted:#b4c1b8; --dim:#86958b; --green:#73f5a6; }
+        * { box-sizing:border-box; margin:0; padding:0; }
+        html { background:var(--bg); }
+        html, body { min-height:100%; }
+        body { background-color:var(--bg); background-image:linear-gradient(rgba(115,245,166,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(115,245,166,.03) 1px,transparent 1px); background-size:32px 32px; color:var(--text); display:flex; flex-direction:column; font:16px/1.5 "SFMono-Regular",Consolas,"Liberation Mono",monospace; min-height:100vh; overflow:hidden; }
+        .container { display:flex; flex:1 0 auto; flex-direction:column; justify-content:center; margin:0 auto; padding:24px 0; width:min(100% - 64px,920px); }
+        .logo-section { background:rgba(8,12,10,.92); border:1px solid var(--line); margin:0 auto 16px; padding:24px 28px 26px; position:relative; width:100%; }
+        .logo-section::before { color:var(--green); content:"●  PS4 / PSFREE HOST"; display:block; font-size:13px; letter-spacing:.12em; margin-bottom:18px; }
+        .logo-section::after { color:var(--dim); content:"SYS / CACHE UPDATE"; font-size:12px; letter-spacing:.08em; position:absolute; right:28px; top:25px; }
+        .main-title { color:var(--text); font-size:clamp(32px,5vw,52px); font-weight:400; letter-spacing:-.07em; line-height:1.05; }
+        .main-title::before { color:var(--green); content:"> "; }
+        .subtitle { color:var(--green); font-size:17px; letter-spacing:.08em; margin-top:14px; }
+        .progress-container { margin:0 auto; width:100%; }
+        .progress-label { color:var(--green); font-size:15px; margin-bottom:10px; }
+        .progress-wrapper { background:var(--panel); border:1px solid var(--line-bright); padding:6px; }
+        .progress-bar { background:#0d120f; border:1px solid var(--line); height:62px; overflow:hidden; position:relative; }
+        .progress-fill { background:var(--green); height:100%; transition:width .3s ease; width:0; }
+        .progress-text { color:var(--text); font-size:20px; font-weight:400; left:50%; position:absolute; text-shadow:0 1px 8px rgba(0,0,0,.8); top:50%; transform:translate(-50%,-50%); z-index:3; }
+        .status-message { color:var(--muted); font-size:15px; margin-top:12px; text-align:left; }
+        .credits { border-top:1px solid var(--line); color:var(--muted); flex:0 0 auto; font-size:13px; margin:0 auto; padding:8px 20px 10px; text-align:center; width:min(100% - 64px,920px); }
+        .credits-line { display:inline; }
+        .credits-line + .credits-line::before { color:var(--line-bright); content:"  //  "; }
+        .credit-label { color:var(--muted); }
+        .credits a { color:var(--text); }
+        .credits a:hover,.credits a:focus { color:var(--green); }
+        @media (max-width:700px) {
+            body { overflow:auto; }
+            .container { justify-content:flex-start; padding:28px 0 22px; width:min(100% - 32px,560px); }
+            .logo-section { padding:22px 18px 24px; }
+            .logo-section::after { display:none; }
+            .main-title { font-size:clamp(32px,10vw,48px); }
+            .progress-bar { height:56px; }
+            .credits-line { display:block; margin:4px 0; }
+            .credits-line + .credits-line::before { content:""; }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="container">
+        <header class="logo-section">
+            <h1 class="main-title">PlayStation Pulse PSFree Host</h1>
+            <p class="subtitle">Loading Offline Cache</p>
+        </header>
+
+        <section class="progress-container">
+            <div class="progress-label" id="progress">Loading.. Please Wait !!!</div>
+            <div class="progress-wrapper">
+                <div class="progress-bar" id="myProgress">
+                    <div class="progress-fill" id="myBar"></div>
+                    <div class="progress-text" id="progressText">0%</div>
+                </div>
+            </div>
+            <div class="status-message">Initializing cache system...</div>
+        </section>
+    </main>
+
+    <footer class="credits">
+        <div class="credits-line"><span class="credit-label">Premium Game Servers -</span> <a href="https://nodeplay.net/" class="nodeplay-link">NodePlay</a></div>
+        <div class="credits-line"><span class="credit-label">Author:</span> <a href="https://t.me/sudoBlackArch" class="telegram-link">BlackArch</a> <span style="margin: 0 1rem;">•</span> <span class="credit-label">Telegram:</span> <a href="https://t.me/PlayStation_Pulse" class="credit-link">PlayStation Pulse</a></div>
+    </footer>
+
+    <script>
+        if (window.applicationCache.status == 2) { localStorage.is755BCached = true; }
+        window.applicationCache.ondownloading = function () {
+            document.getElementById("progress").innerHTML = "Page Caching Started!!";
+            localStorage.is755BCached = false;
+        };
+        window.applicationCache.onprogress = function (a) {
+            const progress = Math.round(100 * (a.loaded / a.total));
+            document.getElementById("myBar").style.width = progress + "%";
+            document.getElementById("progressText").innerHTML = progress + "%";
+        };
+        window.applicationCache.oncached = function () {
+            document.getElementById("myBar").style.width = "100%";
+            document.getElementById("progressText").innerHTML = "100%";
+            document.getElementById("progress").innerHTML = "Page Cached Successfully!!!";
+            localStorage.is755BCached = true;
+            setTimeout(function () { window.location.reload("myBar"); }, 1500);
+        };
+        window.applicationCache.onupdateready = function () {
+            document.getElementById("myBar").style.width = "100%";
+            document.getElementById("progressText").innerHTML = "100%";
+            document.getElementById("progress").innerHTML = "Update Cache Successfully!!!";
+            localStorage.is755BCached = true;
+            setTimeout(function () { window.location.reload("myBar"); }, 1500);
+        };
+        window.applicationCache.onnoupdate = function () { window.location.replace("index.html"); };
+        window.applicationCache.onerror = function () { window.location.replace("index.html"); };
+
+        // Fallback progress animation
+        var width = 0;
+        function frame1() {
+            var elem = document.getElementById("myBar");
+            var text = document.getElementById("progressText");
+            var i = 0;
+            var id = setInterval(fra, 10);
+            function fra() {
+                if (i < 10 && width < 100) {
+                    width++;
+                    elem.style.width = width + "%";
+                    text.innerHTML = width + "%";
+                }
+                i++;
+            }
+        }
+    </script>
+</body>
+
+</html>

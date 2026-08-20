@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlayStation Pulse Host Selector</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 25%, #2d2d5f 50%, #1a1a3e 75%, #0f0f23 100%);
+            background-attachment: fixed;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #ffffff;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .bg-decoration {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .floating-shape {
+            position: absolute;
+            opacity: 0.08;
+            animation: float 25s infinite linear;
+        }
+
+        .shape-1 {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(45deg, #5F5EE0, #7B60F4);
+            border-radius: 50%;
+            top: 15%;
+            left: 8%;
+            animation-delay: 0s;
+        }
+
+        .shape-2 {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(45deg, #7D5FF4, #A257E0);
+            border-radius: 30%;
+            top: 70%;
+            right: 12%;
+            animation-delay: -8s;
+        }
+
+        .shape-3 {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(45deg, #A556DC, #E349A0);
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            top: 45%;
+            left: 85%;
+            animation-delay: -15s;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px) rotate(0deg);
+                opacity: 0.08;
+            }
+
+            50% {
+                transform: translateY(-30px) rotate(180deg);
+                opacity: 0.12;
+            }
+
+            100% {
+                transform: translateY(0px) rotate(360deg);
+                opacity: 0.08;
+            }
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem 2rem;
+            padding-bottom: 130px;
+        }
+
+        .header-section {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .main-title {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #5F5EE0 0%, #A556DC 50%, #E349A0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #b6b8ff;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+
+        .description {
+            font-size: 1rem;
+            color: #c5c7ff;
+            font-weight: 400;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .version-selection {
+            max-width: 700px;
+            width: 100%;
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #ffffff;
+            text-align: center;
+            margin: 2rem 0 1.5rem 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Custom firmware dropdown */
+        .fw-selector {
+            position: relative;
+            width: 100%;
+            margin: 1.5rem 0 2.5rem 0;
+        }
+
+        .fw-selector-btn {
+            width: 100%;
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(159, 88, 227, 0.5);
+            border-radius: 16px;
+            padding: 1.4rem 1.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            text-align: left;
+        }
+
+        .fw-selector-btn:hover,
+        .fw-selector-btn:focus {
+            border-color: rgba(227, 73, 160, 0.8);
+            box-shadow: 0 20px 40px rgba(165, 86, 220, 0.25);
+            outline: none;
+            transform: translateY(-2px);
+        }
+
+        .fw-selector-btn.open {
+            border-color: rgba(227, 73, 160, 0.8);
+        }
+
+        .fw-selector-badge {
+            display: inline-block;
+            background: linear-gradient(90deg, #5F5EE0, #E349A0);
+            color: #ffffff;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .fw-selector-text {
+            flex: 1;
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .fw-selector-arrow {
+            font-size: 0.9rem;
+            color: #b6b8ff;
+            transition: transform 0.3s ease;
+        }
+
+        .fw-selector-btn.open .fw-selector-arrow {
+            transform: rotate(180deg);
+        }
+
+        .fw-selector-list {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            background: rgba(17, 24, 39, 0.97);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            border-radius: 16px;
+            padding: 0.6rem;
+            z-index: 40;
+            display: none;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), 0 0 40px rgba(139, 92, 246, 0.15);
+        }
+
+        .fw-selector-list.open {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.35rem;
+            animation: dropIn 0.25s ease;
+        }
+
+        @keyframes dropIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fw-option {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.95rem 1.1rem 0.95rem 1.3rem;
+            cursor: pointer;
+            border-radius: 12px;
+            height: 100%;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .fw-option::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            bottom: 10px;
+            left: 0;
+            width: 3px;
+            border-radius: 3px;
+        }
+
+        .fw-option:hover,
+        .fw-option:focus {
+            background: rgba(99, 102, 241, 0.14);
+            transform: translateX(4px);
+            outline: none;
+        }
+
+        .fw-option.fw-505::before { background: linear-gradient(180deg, #5F5EE0, #7B60F4); }
+        .fw-option.fw-672::before { background: linear-gradient(180deg, #7D5FF4, #A257E0); }
+        .fw-option.fw-700::before { background: linear-gradient(180deg, #9058E0, #C84DB8); }
+        .fw-option.fw-900::before { background: linear-gradient(180deg, #A556DC, #E349A0); }
+        .fw-option.fw-css::before { background: linear-gradient(180deg, #14b8a6, #1BFACC); }
+
+        .fw-option-info { flex: 1; }
+
+        .fw-option-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 0.15rem;
+        }
+
+        .fw-option-desc {
+            font-size: 0.85rem;
+            color: #b6b8ff;
+        }
+
+        .fw-option-version {
+            font-size: 0.78rem;
+            color: #10b981;
+            font-weight: 600;
+            white-space: nowrap;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+        }
+
+        .version-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .version-card {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(159, 88, 227, 0.3);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .version-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            border-radius: 16px 16px 0 0;
+        }
+
+        /* FW 5.05 - Blue/Purple gradient */
+        .version-card.fw-505::before {
+            background: linear-gradient(90deg, #5F5EE0, #7B60F4);
+        }
+
+        .version-card.fw-505 {
+            border-color: rgba(95, 94, 224, 0.5);
+        }
+
+        .version-card.fw-505:hover,
+        .version-card.fw-505:focus {
+            border-color: rgba(123, 96, 244, 0.8);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(95, 94, 224, 0.3);
+            outline: none;
+        }
+
+        .version-card.fw-505 .version-badge {
+            background: linear-gradient(90deg, #5F5EE0, #7B60F4);
+        }
+
+        /* FW 6.72 - Purple gradient */
+        .version-card.fw-672::before {
+            background: linear-gradient(90deg, #7D5FF4, #A257E0);
+        }
+
+        .version-card.fw-672 {
+            border-color: rgba(125, 95, 244, 0.5);
+        }
+
+        .version-card.fw-672:hover,
+        .version-card.fw-672:focus {
+            border-color: rgba(162, 87, 224, 0.8);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(125, 95, 244, 0.3);
+            outline: none;
+        }
+
+        .version-card.fw-672 .version-badge {
+            background: linear-gradient(90deg, #7D5FF4, #A257E0);
+        }
+
+        /* FW 7.xx-8.xx - Purple-Pink gradient */
+        .version-card.fw-700::before {
+            background: linear-gradient(90deg, #9058E0, #C84DB8);
+        }
+
+        .version-card.fw-700 {
+            border-color: rgba(144, 88, 224, 0.5);
+        }
+
+        .version-card.fw-700:hover,
+        .version-card.fw-700:focus {
+            border-color: rgba(200, 77, 184, 0.8);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(144, 88, 224, 0.3);
+            outline: none;
+        }
+
+        .version-card.fw-700 .version-badge {
+            background: linear-gradient(90deg, #9058E0, #C84DB8);
+        }
+
+        /* FW 9.xx - Pink gradient */
+        .version-card.fw-900::before {
+            background: linear-gradient(90deg, #A556DC, #E349A0);
+        }
+
+        .version-card.fw-900 {
+            border-color: rgba(165, 86, 220, 0.5);
+        }
+
+        .version-card.fw-900:hover,
+        .version-card.fw-900:focus {
+            border-color: rgba(227, 73, 160, 0.8);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(165, 86, 220, 0.3);
+            outline: none;
+        }
+
+        .version-card.fw-900 .version-badge {
+            background: linear-gradient(90deg, #A556DC, #E349A0);
+        }
+
+        /* CSSFontFace - cyan/purple gradient */
+        .version-card.fw-css::before {
+            background: linear-gradient(90deg, #1BFACC, #8b5cf6);
+        }
+
+        .version-card.fw-css {
+            border-color: rgba(27, 250, 204, 0.5);
+        }
+
+        .version-card.fw-css:hover,
+        .version-card.fw-css:focus {
+            border-color: rgba(86, 255, 255, 0.8);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(27, 250, 204, 0.25);
+            outline: none;
+        }
+
+        .version-card.fw-css .version-badge {
+            background: linear-gradient(90deg, #1BFACC, #8b5cf6);
+        }
+
+        .version-badge {
+            display: inline-block;
+            color: #ffffff;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .version-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 0.5rem;
+        }
+
+        .version-number {
+            font-size: 1rem;
+            color: #10b981;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .version-description {
+            font-size: 0.9rem;
+            color: #b6b8ff;
+            line-height: 1.5;
+        }
+
+        /* NodePlay Banner */
+        .nodeplay-banner {
+            max-width: 800px;
+            width: 100%;
+            margin-top: 1rem;
+            background: linear-gradient(135deg, rgba(109, 40, 217, 0.15) 0%, rgba(156, 39, 176, 0.15) 100%);
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(156, 39, 176, 0.4);
+            border-radius: 20px;
+            padding: 1.5rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            display: block;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .nodeplay-banner:hover {
+            border-color: rgba(156, 39, 176, 0.7);
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(109, 40, 217, 0.3);
+        }
+
+        .nodeplay-banner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #6D28D9, #9C27B0, #6D28D9);
+            background-size: 200% 100%;
+            animation: shimmer 3s linear infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        .nodeplay-banner .banner-title {
+            font-size: 1rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 1);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.5rem;
+        }
+
+        .nodeplay-banner .banner-brand {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #FFFFFF 0%, #9C27B0 50%, #6D28D9 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            letter-spacing: 2px;
+        }
+
+        .nodeplay-banner .banner-slogan {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .nodeplay-banner .glow-orb {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.3;
+        }
+
+        .nodeplay-banner .glow-orb.orb-1 {
+            background: #6D28D9;
+            top: -50px;
+            left: -50px;
+        }
+
+        .nodeplay-banner .glow-orb.orb-2 {
+            background: #9C27B0;
+            bottom: -50px;
+            right: -50px;
+        }
+
+        /* Credits */
+        .credits {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 25%, #2d2d5f 50%, #1a1a3e 75%, #0f0f23 100%);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(99, 102, 241, 0.2);
+            padding: 1rem;
+            text-align: center;
+            font-size: 1rem;
+            z-index: 3;
+            pointer-events: auto;
+        }
+
+        .credits-line {
+            margin: 0.25rem 0;
+        }
+
+        .nodeplay-link {
+            color: #c084fc;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .nodeplay-link:hover {
+            color: #d8b4fe;
+        }
+
+        .credit-label {
+            color: #ffffff;
+            font-weight: 500;
+        }
+
+        .credit-link {
+            color: #ec4899;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .credit-link:hover {
+            color: #ff8fc7;
+        }
+
+        .telegram-link {
+            color: #8b5cf6;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .telegram-link:hover {
+            color: #b595ff;
+        }
+
+        @media (max-width: 1100px) {
+            .version-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1.5rem;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .fw-selector-list.open {
+                grid-template-columns: 1fr;
+            }
+
+            .fw-option {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+
+            html,
+            body {
+                overflow-y: auto;
+                overflow-x: hidden;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .main-title {
+                font-size: 2.2rem;
+            }
+
+            .container {
+                padding: 1.5rem 1rem;
+                padding-bottom: 135px;
+                padding-top: 2rem;
+                justify-content: flex-start;
+                min-height: auto;
+            }
+
+            .section-title {
+                margin: 1rem 0;
+            }
+
+            .nodeplay-banner {
+                padding: 1.2rem;
+                margin-bottom: 1rem;
+            }
+
+            .nodeplay-banner .banner-brand {
+                font-size: 1.8rem;
+            }
+
+            .nodeplay-banner .banner-title {
+                font-size: 0.85rem;
+            }
+
+            .nodeplay-banner .banner-slogan {
+                font-size: 0.75rem;
+            }
+
+            .credits {
+                position: relative;
+                margin-top: 1rem;
+            }
+        }
+
+        /* PlayStation Pulse terminal / retro-computing theme */
+        :root {
+            --terminal-bg: #050706;
+            --terminal-panel: #080c0a;
+            --terminal-raised: #0d1510;
+            --terminal-line: #34443a;
+            --terminal-line-bright: #607b68;
+            --terminal-text: #f1f6f2;
+            --terminal-muted: #b4c1b8;
+            --terminal-dim: #86958b;
+            --terminal-green: #73f5a6;
+            --terminal-green-soft: #36bd77;
+            --terminal-amber: #dfbd73;
+        }
+
+        html {
+            background: var(--terminal-bg);
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            align-items: stretch;
+            background-color: var(--terminal-bg);
+            background-image: linear-gradient(rgba(115, 245, 166, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(115, 245, 166, 0.03) 1px, transparent 1px);
+            background-size: 32px 32px;
+            color: var(--terminal-text);
+            display: flex;
+            flex-direction: column;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+            font-size: 17px;
+            overflow: hidden;
+        }
+
+        .bg-decoration,
+        .floating-shape {
+            display: none;
+        }
+
+        .container {
+            align-items: stretch;
+            display: flex;
+            flex: 1 0 auto;
+            flex-direction: column;
+            justify-content: center;
+            margin: 0 auto;
+            min-height: 0;
+            padding: 24px 0;
+            position: relative;
+            width: min(100% - 64px, 1120px);
+            z-index: 2;
+        }
+
+        .header-section {
+            background: rgba(8, 12, 10, 0.92);
+            border: 1px solid var(--terminal-line);
+            margin-bottom: 14px;
+            padding: 20px 28px 24px;
+            position: relative;
+            text-align: left;
+        }
+
+        .header-section::before {
+            color: var(--terminal-green);
+            content: "●  PS4 / HOST SELECTOR";
+            display: block;
+            font-size: 14px;
+            letter-spacing: 0.12em;
+            margin-bottom: 18px;
+        }
+
+        .header-section::after {
+            color: var(--terminal-dim);
+            content: "SYS / READY   //   OFFLINE MODE";
+            font-size: 13px;
+            letter-spacing: 0.08em;
+            position: absolute;
+            right: 28px;
+            top: 21px;
+        }
+
+        .main-title {
+            background: none;
+            color: var(--terminal-text);
+            font-size: clamp(32px, 5vw, 50px);
+            font-weight: 400;
+            letter-spacing: -0.07em;
+            line-height: 1.05;
+            margin-bottom: 0;
+            max-width: 900px;
+            -webkit-background-clip: initial;
+            -webkit-text-fill-color: var(--terminal-text);
+        }
+
+        .main-title::before {
+            color: var(--terminal-green);
+            content: "> ";
+        }
+
+        .subtitle {
+            color: var(--terminal-green);
+            font-size: 17px;
+            letter-spacing: 0.08em;
+            margin: 14px 0 0;
+            text-transform: uppercase;
+        }
+
+        .description {
+            color: var(--terminal-muted);
+            font-size: 15px;
+            line-height: 1.55;
+            margin: 8px 0 0;
+            max-width: 760px;
+        }
+
+        .version-selection {
+            background: rgba(8, 12, 10, 0.82);
+            border: 1px solid var(--terminal-line);
+            max-width: none;
+            padding: 18px 22px 16px;
+            width: 100%;
+        }
+
+        .section-title {
+            border-bottom: 1px solid var(--terminal-line);
+            color: var(--terminal-muted);
+            font-size: 14px;
+            letter-spacing: 0.12em;
+            margin: 0 0 12px;
+            padding: 0 0 10px;
+            text-align: left;
+        }
+
+        .section-title::before {
+            color: var(--terminal-dim);
+            content: "$ select --firmware";
+            float: right;
+            font-size: 13px;
+            letter-spacing: 0.04em;
+            text-transform: none;
+        }
+
+        .fw-selector {
+            margin: 0;
+            width: 100%;
+        }
+
+        .fw-selector-btn {
+            align-items: center;
+            background: var(--terminal-panel);
+            border: 1px solid var(--terminal-line-bright);
+            border-radius: 0;
+            box-shadow: none;
+            color: var(--terminal-text);
+            display: flex;
+            font-family: inherit;
+            gap: 16px;
+            min-height: 82px;
+            padding: 18px 20px;
+            transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+        }
+
+        .fw-selector-btn:hover,
+        .fw-selector-btn:focus,
+        .fw-selector-btn.open {
+            background: var(--terminal-raised);
+            border-color: var(--terminal-green);
+            box-shadow: 0 0 0 1px var(--terminal-green), 0 0 22px rgba(115, 245, 166, 0.08);
+            outline: none;
+            transform: none;
+        }
+
+        .fw-selector-badge {
+            background: transparent;
+            border: 1px solid var(--terminal-green-soft);
+            border-radius: 0;
+            color: var(--terminal-green);
+            font-size: 13px;
+            font-weight: 400;
+            letter-spacing: 0.1em;
+            padding: 7px 10px;
+        }
+
+        .fw-selector-text {
+            color: var(--terminal-text);
+            font-size: 18px;
+            font-weight: 400;
+        }
+
+        .fw-selector-arrow {
+            color: var(--terminal-green);
+            font-size: 15px;
+        }
+
+        .fw-selector-list {
+            background: var(--terminal-panel);
+            border: 1px solid var(--terminal-line-bright);
+            border-radius: 0;
+            box-shadow: 0 18px 36px rgba(0, 0, 0, 0.55);
+            padding: 8px;
+            backdrop-filter: none;
+        }
+
+        .fw-selector-list.open {
+            animation: none;
+        }
+
+        .fw-option {
+            border-left: 2px solid var(--terminal-line-bright);
+            border-radius: 0;
+            gap: 14px;
+            min-height: 76px;
+            padding: 14px 16px;
+            transition: background-color 160ms ease, border-color 160ms ease;
+        }
+
+        .fw-option::before {
+            display: none;
+        }
+
+        .fw-option:hover {
+            background: var(--terminal-panel);
+            border-left-color: var(--terminal-line-bright);
+            outline: none;
+            transform: none;
+        }
+
+        .fw-option:focus {
+            background: var(--terminal-panel);
+            border-left-color: inherit;
+            outline: 1px solid var(--terminal-line-bright);
+            transform: none;
+        }
+
+        .fw-option[aria-selected="true"] {
+            background: var(--terminal-raised);
+            border-left-color: var(--terminal-green);
+        }
+
+        .fw-option.fw-css { border-left-color: var(--terminal-green); }
+        .fw-option.fw-505 { border-left-color: var(--terminal-amber); }
+        .fw-option.fw-672 { border-left-color: #b78cff; }
+        .fw-option.fw-700 { border-left-color: #db83d0; }
+        .fw-option.fw-900 { border-left-color: #ff9bca; }
+
+        /* Category colors are neutral until an option is actually selected. */
+        .fw-option.fw-css,
+        .fw-option.fw-505,
+        .fw-option.fw-672,
+        .fw-option.fw-700,
+        .fw-option.fw-900 {
+            background: transparent;
+            border-left-color: var(--terminal-line-bright);
+        }
+
+        .fw-option:hover {
+            background: var(--terminal-raised);
+            border-left-color: var(--terminal-line-bright);
+        }
+
+        .fw-option:focus {
+            background: transparent;
+            border-left-color: var(--terminal-line-bright);
+            outline: 1px dotted var(--terminal-line-bright);
+            transform: none;
+        }
+
+        .fw-option[aria-selected="true"] {
+            background: var(--terminal-raised);
+            border-left-color: var(--terminal-green);
+            box-shadow: inset 0 0 0 1px rgba(115, 245, 166, 0.18);
+        }
+
+        .fw-option[aria-selected="true"] .fw-option-version {
+            border-color: var(--terminal-green);
+        }
+
+        .fw-option-title {
+            color: var(--terminal-text);
+            font-size: 17px;
+            font-weight: 400;
+            margin-bottom: 4px;
+        }
+
+        .fw-option-desc {
+            color: var(--terminal-muted);
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .fw-option-version {
+            background: transparent;
+            border: 1px solid var(--terminal-line-bright);
+            border-radius: 0;
+            color: var(--terminal-green);
+            font-size: 12px;
+            font-weight: 400;
+            padding: 6px 9px;
+        }
+
+        .nodeplay-banner {
+            align-items: center;
+            background: var(--terminal-panel);
+            border: 1px solid var(--terminal-line);
+            border-radius: 0;
+            box-shadow: none;
+            display: grid;
+            gap: 18px;
+            grid-template-columns: 1fr auto 1fr;
+            margin-top: 14px;
+            max-width: none;
+            min-height: 86px;
+            padding: 18px 20px;
+            text-align: left;
+            transition: background-color 160ms ease, border-color 160ms ease;
+        }
+
+        .nodeplay-banner:hover,
+        .nodeplay-banner:focus {
+            background: var(--terminal-raised);
+            border-color: var(--terminal-green-soft);
+            box-shadow: none;
+            outline: none;
+            transform: none;
+        }
+
+        .nodeplay-banner .glow-orb,
+        .nodeplay-banner::before {
+            display: none;
+        }
+
+        .nodeplay-banner .banner-title,
+        .nodeplay-banner .banner-slogan {
+            color: var(--terminal-muted);
+            font-size: 13px;
+            font-weight: 400;
+            letter-spacing: 0.08em;
+            margin: 0;
+        }
+
+        .nodeplay-banner .banner-title::before {
+            color: var(--terminal-green);
+            content: "// ";
+        }
+
+        .nodeplay-banner .banner-brand {
+            color: var(--terminal-text);
+            font-size: 22px;
+            font-weight: 400;
+            letter-spacing: 0.08em;
+            margin: 0;
+            -webkit-text-fill-color: var(--terminal-text);
+            background: none;
+        }
+
+        .nodeplay-banner .banner-slogan {
+            text-align: right;
+        }
+
+        .credits {
+            background: transparent;
+            border-top: 1px solid var(--terminal-line);
+            color: var(--terminal-muted);
+            flex: 0 0 auto;
+            font-size: 13px;
+            margin: 0 auto;
+            padding: 8px 20px 10px;
+            position: static;
+            text-align: center;
+            width: min(100% - 64px, 1120px);
+            z-index: 3;
+        }
+
+        .credits-line {
+            display: inline;
+            margin: 0;
+        }
+
+        .credits-line + .credits-line::before {
+            color: var(--terminal-line-bright);
+            content: "  //  ";
+        }
+
+        .credit-label {
+            color: var(--terminal-muted);
+        }
+
+        .credits a {
+            color: var(--terminal-text);
+        }
+
+        .credits a:hover,
+        .credits a:focus {
+            color: var(--terminal-green);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                overflow: auto;
+            }
+
+            .container {
+                justify-content: flex-start;
+                min-height: auto;
+                padding: 28px 0 20px;
+                width: min(100% - 32px, 560px);
+            }
+
+            .header-section {
+                padding: 22px 20px 26px;
+            }
+
+            .header-section::after {
+                display: none;
+            }
+
+            .main-title {
+                font-size: clamp(32px, 10vw, 48px);
+            }
+
+            .version-selection {
+                padding: 18px 16px 16px;
+            }
+
+            .section-title::before {
+                float: none;
+                display: block;
+                margin-top: 5px;
+            }
+
+            .fw-selector-list.open {
+                grid-template-columns: 1fr;
+            }
+
+            .fw-selector-btn {
+                min-height: 70px;
+                padding: 14px;
+            }
+
+            .fw-option {
+                align-items: center;
+                display: grid;
+                gap: 8px;
+                grid-template-columns: minmax(0, 1fr) auto;
+                min-height: 70px;
+            }
+
+            .nodeplay-banner {
+                gap: 6px;
+                grid-template-columns: 1fr;
+                margin-bottom: 0;
+                padding: 14px 16px;
+            }
+
+            .nodeplay-banner .banner-slogan {
+                text-align: left;
+            }
+
+            .credits {
+                margin-top: 0;
+                position: static;
+            }
+        }
+
+        @media (max-width: 430px) {
+            .header-section {
+                padding: 20px 16px 22px;
+            }
+
+            .main-title {
+                font-size: 30px;
+            }
+
+            .subtitle {
+                font-size: 14px;
+            }
+
+            .description {
+                font-size: 13px;
+            }
+
+            .fw-selector-btn {
+                gap: 10px;
+                padding: 12px;
+            }
+
+            .fw-selector-badge {
+                font-size: 10px;
+                padding: 6px 7px;
+            }
+
+            .fw-selector-text {
+                font-size: 15px;
+            }
+
+            .fw-option {
+                grid-template-columns: 1fr;
+            }
+
+            .fw-option-version {
+                justify-self: start;
+            }
+
+            .credits-line {
+                display: block;
+                margin: 4px 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-decoration">
+        <div class="floating-shape shape-1"></div>
+        <div class="floating-shape shape-2"></div>
+        <div class="floating-shape shape-3"></div>
+    </div>
+
+    <div class="container">
+        <div class="header-section">
+            <h1 class="main-title">PlayStation Pulse Host Selector</h1>
+            <p class="subtitle">Best Offline PS4 Hosts with actual GoldHEN</p>
+            <p class="description">Select your PlayStation 4 firmware version to get started with the your host</p>
+        </div>
+
+        <div class="version-selection">
+            <div class="section-title">Choose Your Firmware Version</div>
+            <div class="fw-selector">
+                <button id="fwSelectorBtn" class="fw-selector-btn" tabindex="0" aria-haspopup="listbox"
+                    aria-expanded="false">
+                    <span class="fw-selector-badge">Firmware</span>
+                    <span class="fw-selector-text" id="fwSelectorText">Select Firmware Version</span>
+                    <span class="fw-selector-arrow">▼</span>
+                </button>
+
+                <div id="fwSelectorList" class="fw-selector-list" role="listbox">
+                    <div class="fw-option fw-css" data-fw="css" tabindex="0" role="option">
+                        <div class="fw-option-info">
+                            <div class="fw-option-title">FW 6.00–11.02</div>
+                            <div class="fw-option-desc">CSSFontFace UAF exploit with automatic GoldHEN</div>
+                        </div>
+                        <div class="fw-option-version">Offline CSSFontFace</div>
+                    </div>
+
+                    <div class="fw-option fw-900" data-fw="900" tabindex="0" role="option">
+                        <div class="fw-option-info">
+                            <div class="fw-option-title">FW 9.00–9.60</div>
+                            <div class="fw-option-desc">Latest supported firmware with PSFree exploit</div>
+                        </div>
+                        <div class="fw-option-version">Offline PSFree</div>
+                    </div>
+
+                    <div class="fw-option fw-700" data-fw="700" tabindex="0" role="option">
+                        <div class="fw-option-info">
+                            <div class="fw-option-title">FW 7.00–8.52</div>
+                            <div class="fw-option-desc">Firmware range 7.00–8.52 with PSFree exploit</div>
+                        </div>
+                        <div class="fw-option-version">Offline PSFree</div>
+                    </div>
+
+                    <div class="fw-option fw-672" data-fw="672" tabindex="0" role="option">
+                        <div class="fw-option-info">
+                            <div class="fw-option-title">FW 6.72</div>
+                            <div class="fw-option-desc">Middle-ground firmware with enhanced features and solid performance</div>
+                        </div>
+                        <div class="fw-option-version">Offline 6.72 Host</div>
+                    </div>
+
+                    <div class="fw-option fw-505" data-fw="505" tabindex="0" role="option">
+                        <div class="fw-option-info">
+                            <div class="fw-option-title">FW 5.05</div>
+                            <div class="fw-option-desc">Classic firmware with proven stability and wide compatibility</div>
+                        </div>
+                        <div class="fw-option-version">Offline 5.05 Host</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- NodePlay Banner -->
+        <a href="https://nodeplay.net/" target="_blank" class="nodeplay-banner">
+            <div class="glow-orb orb-1"></div>
+            <div class="glow-orb orb-2"></div>
+            <div class="banner-title">Premium Game Servers</div>
+            <div class="banner-brand">NodePlay</div>
+            <div class="banner-slogan">Powered to Perfection. Played to Win.</div>
+        </a>
+    </div>
+
+    <div class="credits">
+        <div class="credits-line">
+            <span class="credit-label">Premium Game Servers -</span>
+            <a href="https://nodeplay.net/" class="nodeplay-link">NodePlay</a>
+        </div>
+        <div class="credits-line">
+            <span class="credit-label">Author:</span>
+            <a href="https://t.me/sudoBlackArch" class="telegram-link">BlackArch</a>
+            <span style="margin: 0 1rem;">•</span>
+            <span class="credit-label">Telegram:</span>
+            <a href="https://t.me/PlayStation_Pulse" class="credit-link">PlayStation Pulse</a>
+        </div>
+    </div>
+
+    <script>
+        function selectFirmware(fw) {
+            localStorage.setItem('selectedFirmware', fw);
+            switch (fw) {
+                case '505':
+                    window.location.href = '505/index.html';
+                    break;
+                case '672':
+                    window.location.href = '672/index.html';
+                    break;
+                case '700':
+                    window.location.href = '700/version-selector.html';
+                    break;
+                case '900':
+                    window.location.href = '900/version-selector.html';
+                    break;
+                case 'css':
+                    window.location.href = 'css/version-selector.html';
+                    break;
+            }
+        }
+
+        var selectorBtn = document.getElementById('fwSelectorBtn');
+        var selectorList = document.getElementById('fwSelectorList');
+        var options = document.querySelectorAll('.fw-option');
+        var currentFocus = -1;
+        var isOpen = false;
+        var savedFirmwareValue = localStorage.getItem('selectedFirmware');
+        var hasSavedFirmware = savedFirmwareValue !== null;
+        var savedFirmware = savedFirmwareValue || '900';
+
+        for (var initialIndex = 0; initialIndex < options.length; initialIndex++) {
+            if (options[initialIndex].getAttribute('data-fw') === savedFirmware) {
+                currentFocus = initialIndex;
+                if (hasSavedFirmware) options[initialIndex].setAttribute('aria-selected', 'true');
+                break;
+            }
+        }
+
+        if (currentFocus < 0) currentFocus = 0;
+
+        function openList() {
+            isOpen = true;
+            selectorList.classList.add('open');
+            selectorBtn.classList.add('open');
+            selectorBtn.setAttribute('aria-expanded', 'true');
+            document.querySelector('.container').style.zIndex = '30';
+            options[currentFocus].focus();
+        }
+
+        function closeList(refocusBtn) {
+            isOpen = false;
+            selectorList.classList.remove('open');
+            selectorBtn.classList.remove('open');
+            selectorBtn.setAttribute('aria-expanded', 'false');
+            document.querySelector('.container').style.zIndex = '2';
+            if (refocusBtn) selectorBtn.focus();
+        }
+
+        function confirmCurrentOption() {
+            var selected = options[currentFocus];
+            selectFirmware(selected.getAttribute('data-fw'));
+        }
+
+        selectorBtn.addEventListener('click', function () {
+            if (isOpen) closeList(true);
+            else openList();
+        });
+
+        for (var i = 0; i < options.length; i++) {
+            (function (index) {
+                options[index].addEventListener('focus', function () {
+                    currentFocus = index;
+                    if (!isOpen) openList();
+                });
+
+                options[index].addEventListener('click', function () {
+                    currentFocus = index;
+                    confirmCurrentOption();
+                });
+
+                options[index].addEventListener('keydown', function (event) {
+                    var key = event.key || event.keyCode;
+                    // Do not intercept arrow keys: PS4 Browser uses them to
+                    // move its visible focus pointer between list options.
+                    if (key === 'Enter' || key === ' ' || key === 13 || key === 32) {
+                        event.preventDefault();
+                        confirmCurrentOption();
+                    } else if (key === 'Escape' || key === 27) {
+                        event.preventDefault();
+                        closeList(true);
+                    }
+                });
+            })(i);
+        }
+
+        document.addEventListener('keydown', function (event) {
+            var key = event.key || event.keyCode;
+
+            if (key === 'Escape' || key === 27) {
+                if (isOpen) closeList(true);
+                return;
+            }
+
+            if (document.activeElement === selectorBtn) {
+                if (key === 'Enter' || key === ' ' || key === 13 || key === 32) {
+                    event.preventDefault();
+                    if (isOpen) closeList(true);
+                    else openList();
+                }
+            }
+        });
+
+        document.addEventListener('click', function (event) {
+            if (isOpen && !selectorBtn.contains(event.target) && !selectorList.contains(event.target)) {
+                closeList(false);
+            }
+        });
+    </script>
+</body>
+
+</html>

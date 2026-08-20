@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html manifest="cache.manifest">
+
+<head>
+    <meta charset="UTF-8">
+    <title>PlayStation Pulse PS4 5.05 FW GoldHEN Host</title>
+<style>
+        :root {
+            --bg: #050706;
+            --panel: #080c0a;
+            --raised: #0d1510;
+            --line: #34443a;
+            --line-bright: #607b68;
+            --text: #f1f6f2;
+            --muted: #b4c1b8;
+            --dim: #86958b;
+            --green: #73f5a6;
+            --green-soft: #36bd77;
+            --amber: #dfbd73;
+            --red: #ff9b9b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { background: var(--bg); }
+        html, body { min-height: 100%; }
+        body {
+            background-color: var(--bg);
+            background-image: linear-gradient(rgba(115, 245, 166, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(115, 245, 166, 0.03) 1px, transparent 1px);
+            background-size: 32px 32px;
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            font: 16px/1.5 "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: flex;
+            flex: 1 0 auto;
+            flex-direction: column;
+            justify-content: center;
+            margin: 0 auto;
+            padding: 24px 0 20px;
+            width: min(100% - 64px, 1120px);
+        }
+
+        .header-section,
+        .status-container,
+        .controls-section {
+            background: rgba(8, 12, 10, 0.92);
+            border: 1px solid var(--line);
+        }
+
+        .header-section {
+            margin-bottom: 12px;
+            padding: 20px 28px 22px;
+            position: relative;
+        }
+
+        .header-section::before {
+            color: var(--green);
+            content: "●  PS4 / OFFLINE 5.05 HOST";
+            display: block;
+            font-size: 13px;
+            letter-spacing: 0.12em;
+            margin-bottom: 16px;
+        }
+
+        .header-section::after {
+            color: var(--dim);
+            content: "SYS / READY   //   AUTO JAILBREAK";
+            font-size: 12px;
+            letter-spacing: 0.08em;
+            position: absolute;
+            right: 28px;
+            top: 21px;
+        }
+
+        .main-title {
+            color: var(--text);
+            font-size: clamp(30px, 5vw, 50px);
+            font-weight: 400;
+            letter-spacing: -0.07em;
+            line-height: 1.05;
+        }
+
+        .main-title::before { color: var(--green); content: "> "; }
+        .subtitle { color: var(--green); font-size: 16px; margin-top: 12px; }
+        .version-info { color: var(--muted); font-size: 14px; margin-top: 7px; }
+        .fw-display { border-left: 2px solid var(--green); color: var(--text); display: inline-block; font-size: 14px; margin-top: 12px; padding: 5px 10px; }
+        .status-container { color: var(--muted); padding: 14px 18px; }
+        .notification, .notification2 { background: var(--panel); border: 1px solid var(--line-bright); color: var(--text); min-height: 42px; padding: 10px 14px; }
+        #log { color: var(--text); font-size: 15px; line-height: 1.45; }
+        #log h1 { color: var(--text) !important; font-size: 15px; font-weight: 400; line-height: 1.45; margin: 0; }
+        #console { display: none !important; }
+        .jailbreak-status { border-left: 2px solid var(--green); color: var(--green); font-size: 16px; margin-top: 10px; padding: 4px 10px; }
+        .jailbreak-status + div { color: var(--muted) !important; font-size: 13px !important; margin-top: 8px !important; }
+        #passCounter { color: var(--green) !important; }
+        #failCounter { color: var(--red) !important; }
+
+        .chain-selector {
+            align-items: center;
+            border-top: 1px solid var(--line);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px 14px;
+            margin-top: 12px;
+            padding-top: 12px;
+        }
+
+        .chain-label { color: var(--muted); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; }
+        .chain-options { display: flex; gap: 8px; }
+        .chain-option,
+        .buttons-grid button {
+            background: var(--panel);
+            border: 1px solid var(--line-bright);
+            border-radius: 0;
+            color: var(--text);
+            cursor: pointer;
+            font: inherit;
+            min-height: 42px;
+            padding: 8px 12px;
+            transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+        }
+
+        .chain-option:hover,
+        .chain-option:focus,
+        .chain-option[aria-pressed="true"],
+        .buttons-grid button:hover,
+        .buttons-grid button:focus {
+            background: var(--raised);
+            border-color: var(--green);
+            color: var(--green);
+            outline: none;
+        }
+
+        .chain-note { color: var(--dim); font-size: 12px; }
+        .controls-section { margin-top: 12px; padding: 16px 18px; }
+        .section-title { border-bottom: 1px solid var(--line); color: var(--muted); font-size: 14px; letter-spacing: 0.12em; margin-bottom: 12px; padding-bottom: 9px; text-transform: uppercase; }
+        .buttons-grid { display: grid; gap: 8px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .buttons-grid button { min-height: 44px; text-align: left; }
+
+        .credits {
+            border-top: 1px solid var(--line);
+            color: var(--muted);
+            flex: 0 0 auto;
+            font-size: 13px;
+            margin: 0 auto;
+            padding: 8px 20px 10px;
+            text-align: center;
+            width: min(100% - 64px, 1120px);
+        }
+
+        .credits-line { display: inline; }
+        .credits-line + .credits-line::before { color: var(--line-bright); content: "  //  "; }
+        .credit-label { color: var(--muted); }
+        .credits a { color: var(--text); }
+        .credits a:hover, .credits a:focus { color: var(--green); }
+
+        @media (max-width: 820px) {
+            body { overflow: auto; }
+            .container { justify-content: flex-start; padding: 24px 0 20px; width: min(100% - 32px, 560px); }
+            .header-section { padding: 20px 18px 22px; }
+            .header-section::after { display: none; }
+            .main-title { font-size: clamp(30px, 9vw, 44px); }
+            .chain-selector { align-items: flex-start; flex-direction: column; }
+            .chain-options { width: 100%; }
+            .chain-option { flex: 1; }
+            .buttons-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .credits-line { display: block; margin: 4px 0; }
+            .credits-line + .credits-line::before { content: ""; }
+        }
+
+        @media (max-width: 430px) {
+            .buttons-grid { grid-template-columns: 1fr; }
+            .main-title { font-size: 30px; }
+        }
+
+        #progress { margin: 0; padding: 0; }
+        #msgs2 { border-left: 2px solid var(--green); color: var(--green); font-size: 16px; font-weight: 400; line-height: 1.45; min-height: 24px; padding: 4px 10px; text-align: left; }
+        #msgs2 h1, #msgs h1 { color: var(--text) !important; font-size: 15px; font-weight: 400; line-height: 1.45; margin: 0; }
+        #msgs { color: var(--muted); font-size: 15px; line-height: 1.45; }
+        #menu { display: none; }
+        .buttons-grid-goldhen { display: grid; gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 12px; }
+        .buttons-grid-goldhen button { background: var(--panel); border: 1px solid var(--line-bright); border-radius: 0; color: var(--text); cursor: pointer; font: inherit; min-height: 44px; padding: 8px 12px; text-align: left; transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease; }
+        .buttons-grid-goldhen button:hover, .buttons-grid-goldhen button:focus { background: var(--raised); border-color: var(--green); color: var(--green); outline: none; }
+        @media (max-width: 430px) { .buttons-grid-goldhen { grid-template-columns: 1fr; } }
+    </style>
+    <script src="exploit.js"></script>
+</head>
+
+<body onload="if(localStorage.cached505=='yes')setTimeout(exploit, 50);">
+    <script>
+        window.applicationCache.onprogress = function (a) { document.getElementById("msgs2").innerHTML = "Installing Offline Cache: " + (Math.round(100 * (a.loaded / a.total))) + "%"; };
+        window.applicationCache.oncached = function () { setTimeout(function () { document.getElementById("msgs2").innerHTML = "Cache Installed Successfully ✔"; }, 1500); setTimeout(function () { document.getElementById("msgs2").innerHTML = "Now Close And Re-Open Your Browser ..."; }, 3500); localStorage.cached505 = "yes"; };
+        window.applicationCache.onnoupdate = function () { localStorage.cached505 = "yes"; };
+        window.applicationCache.onerror = function () { localStorage.cached505 = "yes"; };
+    </script>
+
+    <div class="container">
+        <div class="header-section">
+            <h1 class="main-title">PlayStation Pulse PS4 5.05 FW Host</h1>
+            <p class="subtitle">Offline Auto GoldHEN by Telegram PlayStation Pulse</p>
+            <p class="version-info">Firmware 5.05 • Auto GoldHEN Loader</p>
+        </div>
+
+        <div class="status-container">
+            <div id="progress">
+                <div id="msgs2">Loading... Please Wait</div>
+            </div>
+            <div id="menu">
+                <div id="msgs">Ready to Jailbreak</div>
+            </div>
+        </div>
+
+        <div class="controls-section" id="controls" style="display: none;">
+            <div class="section-title">GoldHEN</div>
+            <div class="buttons-grid-goldhen">
+                <button onclick="load_goldhen18()" onmouseover="msgs.innerHTML='GoldHEN v2.4b18.10 for 5.05 FW'"
+                    onmouseout="msgs.innerHTML='Ready to Jailbreak'">
+                    GoldHEN v2.4b18.10
+                </button>
+                <button onclick="load_goldhen5()" onmouseover="msgs.innerHTML='GoldHEN v2.4b18.5 for 5.05 FW'"
+                    onmouseout="msgs.innerHTML='Ready to Jailbreak'">
+                    GoldHEN v2.4b18.5
+                </button>
+            </div>
+
+            <div class="section-title">Payloads</div>
+            <div class="buttons-grid">
+                <button onclick="load_ftp()"
+                    onmouseover="msgs.innerHTML='FTP Server - Start FTP server for file access'"
+                    onmouseout="msgs.innerHTML='Ready to Jailbreak'">
+                    FTP Server
+                </button>
+
+                <button onclick="load_ps4debug()" onmouseover="msgs.innerHTML='PS4Debug - Enable debugging features'"
+                    onmouseout="msgs.innerHTML='Ready to Jailbreak'">
+                    PS4Debug
+                </button>
+
+                <button onclick="load_app2usb()"
+                    onmouseover="msgs.innerHTML='App2USB - Transfer applications to USB storage'"
+                    onmouseout="msgs.innerHTML='Ready to Jailbreak'">
+                    App2USB
+                </button>
+
+                <button onclick="load_backup()" onmouseover="msgs.innerHTML='Backup - Backup system data to USB'"
+                    onmouseout="msgs.innerHTML='Ready to Jailbreak'">
+                    Backup
+                </button>
+
+                <button onclick="load_restore()" onmouseover="msgs.innerHTML='Restore - Restore system data from USB'"
+                    onmouseout="msgs.innerHTML='Ready to Jailbreak'">
+                    Restore
+                </button>
+
+                <button onclick="load_disableUpdates()"
+                    onmouseover="msgs.innerHTML='Disable Updates - Block system updates'"
+                    onmouseout="msgs.innerHTML='Ready to Jailbreak'">
+                    Disable Updates
+                </button>
+
+                <button onclick="load_enableUpdates()"
+                    onmouseover="msgs.innerHTML='Enable Updates - Allow system updates'"
+                    onmouseout="msgs.innerHTML='Ready to Jailbreak'">
+                    Enable Updates
+                </button>
+
+                <button onclick="load_rifRenamer()" onmouseover="msgs.innerHTML='RIF Renamer - Manage license files'"
+                    onmouseout="msgs.innerHTML='Ready to Jailbreak'">
+                    RIF Renamer
+                </button>
+
+                <button onclick="load_kernelClock()" onmouseover="msgs.innerHTML='Kernel Clock - System clock utility'"
+                    onmouseout="msgs.innerHTML='Ready to Jailbreak'">
+                    Kernel Clock
+                </button>
+
+                <button onclick="load_appcacheInstall()"
+                    onmouseover="msgs.innerHTML='AppCache Install - Install application cache'"
+                    onmouseout="msgs.innerHTML='Ready to Jailbreak'">
+                    AppCache Install
+                </button>
+
+                <button onclick="load_historyBlocker()"
+                    onmouseover="msgs.innerHTML='History Blocker - Block browser history tracking'"
+                    onmouseout="msgs.innerHTML='Ready to Jailbreak'">
+                    History Blocker
+                </button>
+
+                <button onclick="load_pupDecrypt()"
+                    onmouseover="msgs.innerHTML='PUP Decrypt - Decrypt PS4 update files'"
+                    onmouseout="msgs.innerHTML='Ready to Jailbreak'">
+                    PUP Decrypt
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="credits">
+        <div class="credits-line">
+            <span class="credit-label">Premium Game Servers -</span>
+            <a href="https://nodeplay.net/" class="nodeplay-link">NodePlay</a>
+        </div>
+        <div class="credits-line">
+            <span class="credit-label">Author:</span>
+            <a href="https://t.me/sudoBlackArch" class="telegram-link">BlackArch</a>
+            <span style="margin: 0 1rem;">•</span>
+            <span class="credit-label">Telegram:</span>
+            <a href="https://t.me/PlayStation_Pulse" class="credit-link">PlayStation Pulse</a>
+        </div>
+    </div>
+
+    <script>
+        function success() {
+            document.getElementById("menu").style.display = "block";
+            document.getElementById("progress").style.display = "none";
+            document.getElementById("controls").style.display = "block";
+        }
+
+        function allset() {
+            msgs.innerHTML = LoadedMSG;
+        }
+
+        function load_payload() {
+            req1 = null;
+            var req1 = new XMLHttpRequest();
+            req1.open('GET', PLfile); req1.responseType = "arraybuffer";
+            req1.send();
+            req1.onreadystatechange = function () {
+                if (req1.readyState == 4) {
+                    var padding1 = new Uint8Array(4 - (req1.response.byteLength % 4) % 4);
+                    var tmp1 = new Uint8Array(req1.response.byteLength + padding1.byteLength);
+                    tmp1.set(new Uint8Array(req1.response), 0);
+                    tmp1.set(padding1, req1.response.byteLength);
+                    var shellcode1 = new Uint32Array(tmp1.buffer);
+                    var code_addr1 = new int64(0x26100000, 0x00000009);
+                    p.syscall(477, code_addr1, 0x300000, 7, 0x41000, -1, 0);
+                    for (var i = 0; i < shellcode1.length; i++) {
+                        p.write4(code_addr1.add32(0x100000 + i * 4), shellcode1[i]);
+                    }
+                    runPAYLOAD1 = function () {
+                        p.fcall(code_addr1);
+                        PLfile = null;
+                        for (var x = 0; x < 0x300000; x += 8) {
+                            p.write8(code_addr1.add32(x), 0);
+                        } setTimeout(allset, 50);
+                    };
+                    setTimeout(runPAYLOAD1, 100);
+                }
+            };
+        }
+
+        function load_goldhen18() {
+            msgs.innerHTML = "Loading GoldHEN v2.4b18.10... Please Wait";
+            LoadedMSG = "GoldHEN v2.4b18.10 Loaded ✔";
+            PLfile = "../payloads/goldhen.bin";
+            load_payload();
+        }
+
+        function load_goldhen5() {
+            msgs.innerHTML = "Loading GoldHEN v2.4b18.5... Please Wait";
+            LoadedMSG = "GoldHEN v2.4b18.5 Loaded ✔";
+            PLfile = "../payloads/goldhen5.bin";
+            load_payload();
+        }
+
+        function load_ftp() {
+            msgs.innerHTML = "Loading FTP Server... Please Wait";
+            LoadedMSG = "FTP Server Loaded ✔";
+            PLfile = "../payloads/ftp.bin";
+            load_payload();
+        }
+
+        function load_ps4debug() {
+            msgs.innerHTML = "Loading PS4Debug... Please Wait";
+            LoadedMSG = "PS4Debug Loaded ✔";
+            PLfile = "../payloads/ps4debug.bin";
+            load_payload();
+        }
+
+        function load_app2usb() {
+            msgs.innerHTML = "Loading App2USB... Please Wait";
+            LoadedMSG = "App2USB Loaded ✔";
+            PLfile = "../payloads/app2usb.bin";
+            load_payload();
+        }
+
+        function load_backup() {
+            msgs.innerHTML = "Loading Backup... Please Wait";
+            LoadedMSG = "Backup Loaded ✔";
+            PLfile = "../payloads/backup.bin";
+            load_payload();
+        }
+
+        function load_restore() {
+            msgs.innerHTML = "Loading Restore... Please Wait";
+            LoadedMSG = "Restore Loaded ✔";
+            PLfile = "../payloads/restore.bin";
+            load_payload();
+        }
+
+        function load_disableUpdates() {
+            msgs.innerHTML = "Loading Disable Updates... Please Wait";
+            LoadedMSG = "Disable Updates Loaded ✔";
+            PLfile = "../payloads/disable-updates.bin";
+            load_payload();
+        }
+
+        function load_enableUpdates() {
+            msgs.innerHTML = "Loading Enable Updates... Please Wait";
+            LoadedMSG = "Enable Updates Loaded ✔";
+            PLfile = "../payloads/enable-updates.bin";
+            load_payload();
+        }
+
+        function load_rifRenamer() {
+            msgs.innerHTML = "Loading RIF Renamer... Please Wait";
+            LoadedMSG = "RIF Renamer Loaded ✔";
+            PLfile = "../payloads/rif-renamer.bin";
+            load_payload();
+        }
+
+        function load_kernelClock() {
+            msgs.innerHTML = "Loading Kernel Clock... Please Wait";
+            LoadedMSG = "Kernel Clock Loaded ✔";
+            PLfile = "../payloads/Kernel-Clock.bin";
+            load_payload();
+        }
+
+        function load_appcacheInstall() {
+            msgs.innerHTML = "Loading AppCache Install... Please Wait";
+            LoadedMSG = "AppCache Install Loaded ✔";
+            PLfile = "../payloads/appcache-install.bin";
+            load_payload();
+        }
+
+        function load_historyBlocker() {
+            msgs.innerHTML = "Loading History Blocker... Please Wait";
+            LoadedMSG = "History Blocker Loaded ✔";
+            PLfile = "../payloads/history-blocker.bin";
+            load_payload();
+        }
+
+        function load_pupDecrypt() {
+            msgs.innerHTML = "Loading PUP Decrypt... Please Wait";
+            LoadedMSG = "PUP Decrypt Loaded ✔";
+            PLfile = "../payloads/pup-decrypt.bin";
+            load_payload();
+        }
+    </script>
+</body>
+
+</html>

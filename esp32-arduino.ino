@@ -13,7 +13,7 @@ httpd_handle_t httpsServer = NULL;
 
 static const char *AP_SSID = "ESP32_PORTAL";
 static const char *AP_PASSWORD = "12345678";
-static const char *PORTAL_REDIRECT_URL = "http://192.168.4.1/?v=0.3.0-202608161305";
+static const char *PORTAL_REDIRECT_URL = "http://192.168.4.1/";
 
 static const char *PAYLOAD_MIRROR_PREFIX = "/ps5-payloads-mirror/";
 static const char *PAYLOAD_LOCAL_PREFIX = "/pldmrr/";
@@ -121,6 +121,46 @@ static bool isRegularFile(File &file)
     return file && !file.isDirectory();
 }
 
+static String buildPs4UpdateXml(const String &region)
+{
+    const String version = "05.050.000";
+    const String shortVersion = "05.050.000";
+    const String labelVersion = "5.05";
+    const String imageSize = "0";
+    const String imagePath = "";
+
+    return
+        "<?xml version=\"1.0\" ?>"
+        "<update_data_list>"
+        "<region id=\"" + region + "\">"
+        "<force_update>"
+        "<system "
+        "level0_system_ex_version=\"0\" "
+        "level0_system_version=\"" + version + "\" "
+        "level1_system_ex_version=\"0\" "
+        "level1_system_version=\"" + version + "\"/>"
+        "</force_update>"
+        "<system_pup "
+        "ex_version=\"0\" "
+        "label=\"" + labelVersion + "\" "
+        "sdk_version=\"" + shortVersion + "\" "
+        "version=\"" + version + "\">"
+        "<update_data update_type=\"full\">"
+        "<image size=\"" + imageSize + "\">" + imagePath + "</image>"
+        "</update_data>"
+        "</system_pup>"
+        "<recovery_pup type=\"default\">"
+        "<system_pup "
+        "ex_version=\"0\" "
+        "label=\"" + labelVersion + "\" "
+        "sdk_version=\"" + shortVersion + "\" "
+        "version=\"" + version + "\"/>"
+        "<image size=\"" + imageSize + "\">" + imagePath + "</image>"
+        "</recovery_pup>"
+        "</region>"
+        "</update_data_list>";
+}
+
 esp_err_t httpsFileHandler(httpd_req_t *req)
 {
     logHeap("HTTPS file begin");
@@ -198,7 +238,7 @@ esp_err_t httpsFileHandler(httpd_req_t *req)
 
         Serial.printf("[HTTPS] 404: %s", path.c_str());
 
-        if (path.startsWith("/document/") && path.indexOf("/ps5") >= 0)
+        if (path.startsWith("/document/") && (path.indexOf("/ps5") >= 0 || path.indexOf("/ps4") >= 0))
         {
             Serial.printf(" | Redirect: %s -> %s\n", path.c_str(), PORTAL_REDIRECT_URL);
 
@@ -321,6 +361,50 @@ static esp_err_t httpsNetworkTestHandler(httpd_req_t *req)
     );
 }
 
+static esp_err_t httpsPs4UpdateHandler(httpd_req_t *req)
+{
+    Serial.printf(
+        "[HTTPS PS4 UPDATE] uri=%s\n",
+        req->uri
+    );
+
+    String path = normalizePath(req->uri);
+
+    const String prefix = "/update/ps4/list/";
+
+    if (!path.startsWith(prefix))
+    {
+        httpd_resp_set_status(req, "404 Not Found");
+        return httpd_resp_send(
+            req,
+            "404 Not Found",
+            HTTPD_RESP_USE_STRLEN
+        );
+    }
+
+    int start = prefix.length();
+    int end = path.indexOf('/', start);
+
+    String region;
+
+    if (end >= 0)
+        region = path.substring(start, end);
+    else
+        region = path.substring(start);
+
+    String xml = buildPs4UpdateXml(region);
+
+    setHttpsNoCacheHeaders(req);
+
+    httpd_resp_set_type(req, "text/xml");
+
+    return httpd_resp_send(
+        req,
+        xml.c_str(),
+        xml.length()
+    );
+}
+
 bool setupHttpsServer()
 {
     httpd_ssl_config_t config = HTTPD_SSL_CONFIG_DEFAULT();
@@ -432,6 +516,13 @@ bool setupHttpsServer()
         .user_ctx  = NULL
     };
 
+    httpd_uri_t ps4_update_uri = {
+        .uri       = "/update/ps4/list/*",
+        .method    = HTTP_GET,
+        .handler   = httpsPs4UpdateHandler,
+        .user_ctx  = NULL
+    };
+
     httpd_uri_t file_uri = {
         .uri       = "/*",
         .method    = HTTP_GET,
@@ -449,6 +540,7 @@ bool setupHttpsServer()
         &ncsi_uri,
         &post_uri,
         &networktest_get_uri,
+        &ps4_update_uri,
         &file_uri
     };
 
@@ -475,12 +567,84 @@ bool setupHttpsServer()
     return true;
 }
 
+static void httpPs4UpdateHandler()
+{
+    logHttpRequest();
+
+    String path = webServer.uri();
+
+    const String prefix = "/update/ps4/list/";
+    int start = path.indexOf(prefix);
+
+    if (start < 0)
+    {
+        webServer.send(404, "text/plain", "404 Not Found");
+        return;
+    }
+
+    start += prefix.length();
+
+    int end = path.indexOf('/', start);
+
+    String region;
+
+    if (end >= 0)
+        region = path.substring(start, end);
+    else
+        region = path.substring(start);
+
+    setHttpNoCacheHeaders();
+
+    webServer.send(
+        200,
+        "text/xml",
+        buildPs4UpdateXml(region)
+    );
+}
+
 void httpFileHandler()
 {
     logHeap("HTTP file begin");
     logHttpRequest();
 
     String path = normalizePath(webServer.uri().c_str());
+
+    if (path.startsWith("/update/ps4/list/"))
+    {
+        int start = strlen("/update/ps4/list/");
+        int end = path.indexOf('/', start);
+
+        String region;
+
+        if (end >= 0)
+            region = path.substring(start, end);
+        else
+            region = path.substring(start);
+
+        String xml = buildPs4UpdateXml(region);
+
+        Serial.printf(
+            "[HTTP PS4 UPDATE] region=%s uri=%s\n",
+            region.c_str(),
+            path.c_str()
+        );
+
+        setHttpNoCacheHeaders();
+
+        webServer.send(
+            200,
+            "text/xml",
+            xml
+        );
+
+        return;
+    }
+
+    if (path.startsWith("/networktest/"))
+    {
+        httpNetworkTestHandler();
+        return;
+    }
 
     if (path.startsWith(PAYLOAD_MIRROR_PREFIX))
     {
@@ -530,7 +694,7 @@ void httpFileHandler()
 
         Serial.printf("[HTTP] 404: %s", path.c_str());
 
-        if (path.startsWith("/document/") && path.indexOf("/ps5") >= 0)
+        if (path.startsWith("/document/") && (path.indexOf("/ps5") >= 0 || path.indexOf("/ps4") >= 0))
         {
             Serial.printf(" | Redirect: %s -> %s\n", path.c_str(), PORTAL_REDIRECT_URL);
 
@@ -552,18 +716,9 @@ void httpFileHandler()
         return;
     }
 
-    if (gzip)
-        webServer.sendHeader("Content-Encoding", "gzip");
+    String contentType = getMimeType(path);
 
-    webServer.setContentLength(file.size());
-    webServer.send(200, getMimeType(path), "");
-
-    uint8_t buffer[1024];
-
-    while (file.available()) {
-        size_t len = file.read(buffer, sizeof(buffer));
-        webServer.client().write(buffer, len);
-    }
+    webServer.streamFile(file, contentType);
 
     file.close();
     logHeap("HTTP file end");
@@ -626,18 +781,6 @@ void setupWebServer()
         setHttpNoCacheHeaders();
         webServer.send(200, "text/plain", "Success");
     });
-
-    webServer.on(
-        "/networktest/*",
-        HTTP_POST,
-        httpNetworkTestHandler
-    );
-
-    webServer.on(
-        "/networktest/*",
-        HTTP_GET,
-        httpNetworkTestHandler
-    );
 
     webServer.onNotFound(httpFileHandler);
 
@@ -730,6 +873,8 @@ void setup()
 
     Serial.println("Starting DNS");
 
+    dnsServer.setTTL(30);
+    dnsServer.setErrorReplyCode(DNSReplyCode::ServerFailure);
     bool dnsResult =
         dnsServer.start(
             53,

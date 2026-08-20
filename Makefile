@@ -6,12 +6,12 @@ SHELL := /bin/bash
 
 PROJECT_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 PROJECT_NAME := esp32-arduino
-SOURCE_DATA_DIR := $(PROJECT_DIR)/autoloader
-MINIFIED_DATA_DIR := $(PROJECT_DIR)/autoloader.mini
+SOURCE_DATA_DIR := $(PROJECT_DIR)/henloader
+MINIFIED_DATA_DIR := $(PROJECT_DIR)/henloader.mini
 DATA_DIR := $(PROJECT_DIR)/data
 BUILD_DIR := $(PROJECT_DIR)/build
-SERVER_CERT := $(PROJECT_DIR)/server.crt
-SERVER_KEY := $(PROJECT_DIR)/server.key
+SERVER_CERT := $(PROJECT_DIR)/server_x509.crt
+SERVER_KEY := $(PROJECT_DIR)/server_rsa.key
 SERVER_HEADER := $(PROJECT_DIR)/server_certs.h
 CERT_EMBEDDER := $(PROJECT_DIR)/embed_cert.py
 DATA_PREPARER := $(PROJECT_DIR)/prepare-data.sh
@@ -163,14 +163,12 @@ check-8266: check-data
 
 $(SERVER_CERT) $(SERVER_KEY) &:
 	@echo "Generating a self-signed HTTPS certificate..."
-	openssl ecparam -name prime256v1 \
-		-genkey \
-		-noout \
-		-out "$(SERVER_KEY)"
 	openssl req -new -x509 \
+		-newkey rsa:2048 \
 		-sha256 \
 		-days 3650 \
-		-key "$(SERVER_KEY)" \
+		-nodes \
+		-keyout "$(SERVER_KEY)" \
 		-out "$(SERVER_CERT)" \
 		-subj "/CN=manuals.playstation.net" \
 		-addext "subjectAltName=DNS:manuals.playstation.net,IP:192.168.4.1"
