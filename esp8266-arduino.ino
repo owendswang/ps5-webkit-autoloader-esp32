@@ -151,9 +151,6 @@ static void fileHandler(Server &server) {
     if (gzip && type == "application/octet-stream")
         server.sendHeader("Content-Encoding", "gzip");
 
-    if (gzip)
-        server.sendHeader("Vary", "Accept-Encoding");
-
     server.streamFile(file, type);
 
     file.close();
@@ -197,8 +194,6 @@ void setup() {
     bool ap = WiFi.softAP(AP_SSID, AP_PASSWORD);
     Serial.printf("softAP: %s, IP: %s\n", ap ? "OK" : "FAILED", WiFi.softAPIP().toString().c_str());
     if (!ap) while (true) delay(1000);
-    dnsServer.setTTL(30);
-    dnsServer.setErrorReplyCode(DNSReplyCode::ServerFailure);
     Serial.printf("DNS: %s\n", dnsServer.start(53, "*", AP_IP) ? "OK" : "FAILED");
     setupRoutes(webServer);
     Serial.println("HTTP: OK\nREADY");
