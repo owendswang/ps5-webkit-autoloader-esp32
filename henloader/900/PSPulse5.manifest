@@ -1,7 +1,7 @@
-CACHE MANIFEST 
-#VERSION 1.7
+CACHE MANIFEST
+#VERSION 1.9 - WebKit UI
 
-CACHE: 
+CACHE:
 alert5.js
 cache5.html
 config.js
@@ -48,5 +48,5 @@ module/view.js
 rop/900.js
 rop/950.js
 
-NETWORK: 
+NETWORK:
 *

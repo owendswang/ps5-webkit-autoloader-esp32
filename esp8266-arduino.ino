@@ -32,14 +32,14 @@ static String normalizePath(const String &uri) {
 static String contentType(const String &path) {
     if (path.endsWith(".html") || path.endsWith(".htm")) return "text/html; charset=utf-8";
     if (path.endsWith(".css")) return "text/css";
-    if (path.endsWith(".js")) return "application/javascript";
+    if (path.endsWith(".js") || path.endsWith(".mjs")) return "application/javascript";
     if (path.endsWith(".json")) return "application/json";
     if (path.endsWith(".png")) return "image/png";
     if (path.endsWith(".jpg") || path.endsWith(".jpeg")) return "image/jpeg";
     if (path.endsWith(".gif")) return "image/gif";
     if (path.endsWith(".svg")) return "image/svg+xml";
     if (path.endsWith(".ico")) return "image/x-icon";
-    if (path.endsWith(".appcache")) return "text/cache-manifest";
+    if (path.endsWith(".appcache") || path.endsWith(".manifest") || path.endsWith(".cache")) return "text/cache-manifest";
     if (path.endsWith(".woff")) return "font/woff";
     if (path.endsWith(".woff2")) return "font/woff2";
     return "application/octet-stream";
@@ -130,8 +130,11 @@ static void fileHandler(Server &server) {
     if (path.endsWith("/")) path += "index.html";
     else if (!LittleFS.exists(path) && LittleFS.exists(path + "/index.html")) path += "/index.html";
 
+    bool gzip = false;
     File file = LittleFS.open(path + ".gz", "r");
-    if (!file || file.isDirectory()) {
+    if (file && !file.isDirectory()) {
+        gzip = true;
+    } else {
         if (file) file.close();
         file = LittleFS.open(path, "r");
     }
@@ -143,7 +146,16 @@ static void fileHandler(Server &server) {
         } else server.send(404, "text/plain", "404 Not Found");
         return;
     }
-    server.streamFile(file, contentType(path));
+    String type = contentType(path);
+
+    if (gzip && type == "application/octet-stream")
+        server.sendHeader("Content-Encoding", "gzip");
+
+    if (gzip)
+        server.sendHeader("Vary", "Accept-Encoding");
+
+    server.streamFile(file, type);
+
     file.close();
     logHeap("file end");
 }

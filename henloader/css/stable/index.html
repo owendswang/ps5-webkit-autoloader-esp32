@@ -6,29 +6,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PlayStation Pulse CSSFontFace Host</title>
   <style>
-    :root {
-      --bg: #050706;
-      --panel: #080c0a;
-      --raised: #0d1510;
-      --line: #34443a;
-      --line-bright: #607b68;
-      --text: #f1f6f2;
-      --muted: #b4c1b8;
-      --dim: #86958b;
-      --green: #73f5a6;
-      --red: #ff9b9b;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html { background: var(--bg); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+    html { background: #050706; }
     html, body { min-height: 100%; }
 
     body {
-      background-color: var(--bg);
+      background-color: #050706;
       background-image: linear-gradient(rgba(115, 245, 166, 0.03) 1px, transparent 1px),
         linear-gradient(90deg, rgba(115, 245, 166, 0.03) 1px, transparent 1px);
       background-size: 32px 32px;
-      color: var(--text);
+      color: #f1f6f2;
       display: flex;
       flex-direction: column;
       font: 16px/1.5 "SFMono-Regular", Consolas, "Liberation Mono", monospace;
@@ -43,14 +30,14 @@
       justify-content: center;
       margin: 0 auto;
       padding: 24px 0 20px;
-      width: min(100% - 64px, 1120px);
+      width: calc(100% - 64px); max-width: 1120px;
     }
 
     .header-section,
     .status-container,
     .controls-section {
       background: rgba(8, 12, 10, 0.92);
-      border: 1px solid var(--line);
+      border: 1px solid #34443a;
     }
 
     .header-section {
@@ -60,7 +47,7 @@
     }
 
     .header-section::before {
-      color: var(--green);
+      color: #73f5a6;
       content: "●  PS4 / CSSFONTFACE HOST";
       display: block;
       font-size: 13px;
@@ -69,7 +56,7 @@
     }
 
     .header-section::after {
-      color: var(--dim);
+      color: #86958b;
       content: "SYS / READY   //   AUTO JAILBREAK";
       font-size: 12px;
       letter-spacing: 0.08em;
@@ -79,27 +66,27 @@
     }
 
     .main-title {
-      color: var(--text);
-      font-size: clamp(30px, 5vw, 50px);
+      color: #f1f6f2;
+      font-size: 50px;
       font-weight: 400;
       letter-spacing: -0.07em;
       line-height: 1.05;
     }
 
-    .main-title::before { color: var(--green); content: "> "; }
-    .subtitle { color: var(--green); font-size: 16px; margin-top: 12px; }
-    .version-info { color: var(--muted); font-size: 14px; margin-top: 7px; }
-    #UA { color: var(--dim); display: block; font-size: 12px; margin-top: 7px; overflow-wrap: anywhere; }
+    .main-title::before { color: #73f5a6; content: "> "; }
+    .subtitle { color: #73f5a6; font-size: 16px; margin-top: 12px; }
+    .version-info { color: #b4c1b8; font-size: 14px; margin-top: 7px; }
+    #UA { color: #86958b; display: block; font-size: 12px; margin-top: 7px; word-wrap: break-word; }
 
     .status-container {
-      color: var(--muted);
+      color: #b4c1b8;
       padding: 14px 18px;
     }
 
     .status-label,
     .section-title {
-      border-bottom: 1px solid var(--line);
-      color: var(--muted);
+      border-bottom: 1px solid #34443a;
+      color: #b4c1b8;
       font-size: 14px;
       letter-spacing: 0.12em;
       margin-bottom: 12px;
@@ -108,9 +95,9 @@
     }
 
     #console {
-      background: var(--panel);
-      border: 1px solid var(--line-bright);
-      color: var(--text);
+      background: #080c0a;
+      border: 1px solid #607b68;
+      color: #f1f6f2;
       font: inherit;
       font-size: 13px;
       line-height: 1.45;
@@ -127,32 +114,33 @@
       align-items: center;
       display: flex;
       flex-wrap: wrap;
-      gap: 10px 14px;
-    }
+}
 
     .chain-label,
     .auto-jb-label {
-      color: var(--muted);
+      color: #b4c1b8;
       font-size: 13px;
       letter-spacing: 0.08em;
       text-transform: uppercase;
+      margin-right:16px;
     }
 
-    .chain-options { display: flex; gap: 8px; }
+    .chain-options { display: flex; }
     #kernel-options input[type="radio"] { height: 1px; opacity: 0; position: absolute; width: 1px; }
 
     .chain-option,
     #jeilbrek,
     .auto-jb-label {
-      background: var(--panel);
-      border: 1px solid var(--line-bright);
+      background: #080c0a;
+      border: 1px solid #607b68;
       border-radius: 0;
-      color: var(--text);
+      color: #f1f6f2;
       cursor: pointer;
       font: inherit;
       min-height: 42px;
       padding: 8px 12px;
       transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+      margin-right:16px;
     }
 
     #kernel-options input[type="radio"]:focus + .chain-option,
@@ -161,9 +149,9 @@
     #jeilbrek:hover,
     #jeilbrek:focus,
     .auto-jb-label:hover {
-      background: var(--raised);
-      border-color: var(--green);
-      color: var(--green);
+      background: #0d1510;
+      border-color: #73f5a6;
+      color: #73f5a6;
       outline: none;
     }
 
@@ -172,8 +160,7 @@
     .auto-jb {
       align-items: center;
       display: flex;
-      gap: 8px;
-    }
+}
 
     .auto-jb-label {
       align-items: center;
@@ -183,34 +170,33 @@
     }
 
     #autoJbInput {
-      accent-color: var(--green);
-      height: 18px;
+height: 18px;
       width: 18px;
     }
 
     .credits {
-      border-top: 1px solid var(--line);
-      color: var(--muted);
+      border-top: 1px solid #34443a;
+      color: #b4c1b8;
       flex: 0 0 auto;
       font-size: 13px;
       margin: 0 auto;
       padding: 8px 20px 10px;
       text-align: center;
-      width: min(100% - 64px, 1120px);
+      width: calc(100% - 64px); max-width: 1120px;
     }
 
-    .credits a { color: var(--text); }
-    .credits a:hover, .credits a:focus { color: var(--green); }
+    .credits a { color: #f1f6f2; }
+    .credits a:hover, .credits a:focus { color: #73f5a6; }
     .credits-line { display: inline; }
-    .credits-line + .credits-line::before { color: var(--line-bright); content: "  //  "; }
-    .credit-label { color: var(--muted); }
+    .credits-line + .credits-line::before { color: #607b68; content: "  //  "; }
+    .credit-label { color: #b4c1b8; }
 
     @media (max-width: 820px) {
       body { overflow: auto; }
-      .container { justify-content: flex-start; padding: 24px 0 20px; width: min(100% - 32px, 560px); }
+      .container { justify-content: flex-start; padding: 24px 0 20px; width: calc(100% - 32px); max-width: 560px; }
       .header-section { padding: 20px 18px 22px; }
       .header-section::after { display: none; }
-      .main-title { font-size: clamp(30px, 9vw, 44px); }
+      .main-title { font-size: 44px; }
       #kernel-options { align-items: flex-start; flex-direction: column; }
       .chain-options { width: 100%; }
       .chain-option { flex: 1; }
@@ -225,7 +211,7 @@
       .auto-jb { justify-content: space-between; }
       .main-title { font-size: 30px; }
     }
-  </style>
+    </style>
 </head>
 
 <body>
@@ -276,7 +262,7 @@
   </footer>
 
   <script src="src/main.js"></script>
-  <script src="includes/script.js"></script>
+  <script src="../includes/script.js"></script>
 </body>
 
 </html>

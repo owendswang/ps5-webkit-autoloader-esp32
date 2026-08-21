@@ -1,6 +1,7 @@
-CACHE MANIFEST 
+CACHE MANIFEST
+# v1.2 - PS4 WebKit-compatible UI
 
-CACHE: 
+CACHE:
 index.html
 pl_loader.js
 ../payloads/goldhen.bin
@@ -17,5 +18,5 @@ pl_loader.js
 ../payloads/history-blocker.bin
 ../payloads/pup-decrypt.bin
 
-NETWORK: 
-* 
+NETWORK:
+*

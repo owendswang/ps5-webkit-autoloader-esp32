@@ -6,39 +6,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PlayStation Pulse CSSFontFace Host - Version Selection</title>
     <style>
-        :root {
-            --bg: #050706;
-            --panel: #080c0a;
-            --panel-raised: #0d1510;
-            --line: #34443a;
-            --line-bright: #607b68;
-            --text: #f1f6f2;
-            --muted: #b4c1b8;
-            --dim: #86958b;
-            --green: #73f5a6;
-            --green-soft: #36bd77;
-            --amber: #dfbd73;
-        }
-
-        * {
+* {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
 
         html {
-            background: var(--bg);
+            background: #050706;
         }
 
         body {
             display: flex;
             flex-direction: column;
             min-height: 100vh;
-            background-color: var(--bg);
+            background-color: #050706;
             background-image: linear-gradient(rgba(115, 245, 166, 0.03) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(115, 245, 166, 0.03) 1px, transparent 1px);
             background-size: 32px 32px;
-            color: var(--text);
+            color: #f1f6f2;
             font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
             font-size: 17px;
             line-height: 1.5;
@@ -50,7 +36,7 @@
         }
 
         .container {
-            width: min(100% - 64px, 1120px);
+            width: calc(100% - 64px); max-width: 1120px;
             display: flex;
             flex: 1 0 auto;
             flex-direction: column;
@@ -62,13 +48,13 @@
 
         .header-section {
             background: rgba(8, 12, 10, 0.92);
-            border: 1px solid var(--line);
+            border: 1px solid #34443a;
             padding: 20px 28px 24px;
             position: relative;
         }
 
         .header-section::before {
-            color: var(--green);
+            color: #73f5a6;
             content: "●  PS4 / CSSFONTFACE HOST";
             display: block;
             font-size: 14px;
@@ -77,7 +63,7 @@
         }
 
         .header-section::after {
-            color: var(--dim);
+            color: #86958b;
             content: "SYS / READY   //   FW 6.00–11.02";
             font-size: 13px;
             letter-spacing: 0.08em;
@@ -87,8 +73,8 @@
         }
 
         .main-title {
-            color: var(--text);
-            font-size: clamp(32px, 5vw, 50px);
+            color: #f1f6f2;
+            font-size: 50px;
             font-weight: 400;
             letter-spacing: -0.07em;
             line-height: 1.05;
@@ -96,12 +82,12 @@
         }
 
         .main-title::before {
-            color: var(--green);
+            color: #73f5a6;
             content: "> ";
         }
 
         .subtitle {
-            color: var(--green);
+            color: #73f5a6;
             font-size: 17px;
             letter-spacing: 0.08em;
             margin-top: 14px;
@@ -109,7 +95,7 @@
         }
 
         .description {
-            color: var(--muted);
+            color: #b4c1b8;
             font-size: 15px;
             line-height: 1.55;
             margin-top: 8px;
@@ -118,26 +104,26 @@
 
         .version-selection {
             background: rgba(8, 12, 10, 0.82);
-            border: 1px solid var(--line);
+            border: 1px solid #34443a;
             margin-top: 20px;
             padding: 18px 22px 16px;
         }
 
         .section-title {
             align-items: center;
-            color: var(--muted);
+            color: #b4c1b8;
             display: flex;
             font-size: 14px;
             justify-content: space-between;
             letter-spacing: 0.12em;
-            border-bottom: 1px solid var(--line);
+            border-bottom: 1px solid #34443a;
             margin-bottom: 12px;
             padding-bottom: 10px;
             text-transform: uppercase;
         }
 
         .section-title::before {
-            color: var(--dim);
+            color: #86958b;
             content: "$ select --goldhen";
             font-size: 13px;
             letter-spacing: 0.04em;
@@ -150,21 +136,21 @@
         }
 
         .version-grid {
-            display: grid;
-            gap: 12px;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            display: flex;
+            flex-wrap: wrap;
+            margin: -6px;
         }
 
         .version-card {
             align-items: center;
-            background: var(--panel);
-            border: 1px solid var(--line);
-            border-left: 2px solid var(--line-bright);
+            background: #080c0a;
+            flex: 1 1 45%;
+            margin: 6px;
+            min-width: 0;
+            border: 1px solid #34443a;
+            border-left: 2px solid #607b68;
             cursor: pointer;
-            display: grid;
-            gap: 12px 18px;
-            grid-template-columns: 42px minmax(0, 1fr);
-            grid-template-rows: auto 1fr auto;
+            display: flex;
             min-height: 184px;
             padding: 20px 22px;
             text-align: left;
@@ -173,34 +159,36 @@
 
         .version-card:hover,
         .version-card:focus {
-            background: var(--panel-raised);
-            border-color: var(--green-soft);
-            border-left-color: var(--green);
+            background: #0d1510;
+            border-color: #36bd77;
+            border-left-color: #73f5a6;
+            box-shadow: 0 0 0 1px #73f5a6, 0 0 24px rgba(134, 245, 175, 0.08);
             outline: none;
         }
 
-        .version-card:focus-visible {
-            box-shadow: 0 0 0 1px var(--green), 0 0 24px rgba(134, 245, 175, 0.08);
-        }
-
         .version-card.latest {
-            border-left-color: var(--green);
+            border-left-color: #73f5a6;
         }
 
         .card-index {
+            flex: 0 0 42px;
             align-self: start;
-            color: var(--dim);
+            color: #86958b;
             font-size: 15px;
-            grid-row: 1 / span 3;
             padding-top: 2px;
         }
 
+        .version-card > div {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+
         .version-card.latest .card-index {
-            color: var(--green);
+            color: #73f5a6;
         }
 
         .version-badge {
-            color: var(--amber);
+            color: #dfbd73;
             display: block;
             font-size: 13px;
             letter-spacing: 0.1em;
@@ -209,32 +197,31 @@
         }
 
         .version-badge.latest {
-            color: var(--green);
+            color: #73f5a6;
         }
 
         .version-title {
-            color: var(--text);
+            color: #f1f6f2;
             font-size: 21px;
             font-weight: 400;
         }
 
         .version-number {
-            color: var(--green);
+            color: #73f5a6;
             font-size: 16px;
             margin-left: 8px;
         }
 
         .version-description {
-            color: var(--muted);
+            color: #b4c1b8;
             font-size: 14px;
             line-height: 1.5;
             margin-top: 8px;
         }
 
         .card-action {
-            color: var(--dim);
+            color: #86958b;
             font-size: 14px;
-            grid-column: 2;
             letter-spacing: 0.08em;
             margin-top: 12px;
             white-space: nowrap;
@@ -242,11 +229,11 @@
 
         .version-card:hover .card-action,
         .version-card:focus .card-action {
-            color: var(--green);
+            color: #73f5a6;
         }
 
         .version-selection::after {
-            color: var(--muted);
+            color: #b4c1b8;
             content: "↑↓ navigate   enter select";
             display: block;
             font-size: 13px;
@@ -255,14 +242,14 @@
         }
 
         .credits {
-            border-top: 1px solid var(--line);
-            color: var(--muted);
+            border-top: 1px solid #34443a;
+            color: #b4c1b8;
             flex: 0 0 auto;
             font-size: 13px;
             margin: 0 auto;
             padding: 8px 20px 10px;
             text-align: center;
-            width: min(100% - 64px, 1120px);
+            width: calc(100% - 64px); max-width: 1120px;
         }
 
         .credits-line {
@@ -270,29 +257,29 @@
         }
 
         .credits-line + .credits-line::before {
-            color: var(--line-bright);
+            color: #607b68;
             content: "  //  ";
         }
 
         .credit-label {
-            color: var(--muted);
+            color: #b4c1b8;
         }
 
         .credits a {
-            color: var(--text);
+            color: #f1f6f2;
             text-decoration: none;
         }
 
         .credits a:hover,
         .credits a:focus {
-            color: var(--green);
+            color: #73f5a6;
         }
 
         @media (max-width: 760px) {
             .container {
                 min-height: 0;
                 padding: 22px 0 20px;
-                width: min(100% - 32px, 560px);
+                width: calc(100% - 32px); max-width: 560px;
             }
 
             .header-section {
@@ -304,26 +291,20 @@
             }
 
             .main-title {
-                font-size: clamp(32px, 10vw, 48px);
+                font-size: 48px;
             }
 
             .section-title {
                 align-items: flex-start;
                 flex-direction: column;
-                gap: 4px;
-            }
+}
 
             .section-title::before {
                 order: 0;
             }
 
-            .version-grid {
-                grid-template-columns: 1fr;
-            }
-
             .version-card {
-                gap: 12px;
-                grid-template-columns: 30px minmax(0, 1fr);
+                flex-basis: 100%;
                 min-height: 190px;
                 padding: 22px 18px;
             }
@@ -333,7 +314,7 @@
             }
 
             .credits {
-                width: min(100% - 32px, 560px);
+                width: calc(100% - 32px); max-width: 560px;
             }
 
             .card-action {
@@ -430,8 +411,8 @@
         }
 
         // Gamepad navigation
-        let currentFocus = 0;
-        const cards = document.querySelectorAll('.version-card');
+        var currentFocus = 0;
+        var cards = document.querySelectorAll('.version-card');
 
         // Handle keyboard navigation
         document.addEventListener('keydown', function (event) {
@@ -457,38 +438,35 @@
         });
 
         // Track focus changes
-        cards.forEach((card, index) => {
-            card.addEventListener('focus', function () {
-                currentFocus = index;
-            });
+        for (var cardIndex = 0; cardIndex < cards.length; cardIndex++) {
+            (function (card, index) {
+                card.addEventListener('focus', function () {
+                    currentFocus = index;
+                });
 
-            // Handle Enter key on focused element
-            card.addEventListener('keydown', function (event) {
-                if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    this.click();
-                }
-            });
-        });
+                // Handle Enter key on focused element
+                card.addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        this.click();
+                    }
+                });
 
-        // Add click animation effect
-        document.querySelectorAll('.version-card').forEach(card => {
-            card.addEventListener('mousedown', function () {
-                this.style.transform = 'translateY(-2px) scale(0.98)';
-            });
-
-            card.addEventListener('mouseup', function () {
-                this.style.transform = 'translateY(-5px) scale(1)';
-            });
-
-            card.addEventListener('mouseleave', function () {
-                this.style.transform = 'translateY(0px) scale(1)';
-            });
-
-            card.addEventListener('blur', function () {
-                this.style.transform = 'translateY(0px) scale(1)';
-            });
-        });
+                // Pointer feedback; kept in ES5 syntax for PS4's older JSC.
+                card.addEventListener('mousedown', function () {
+                    this.style.transform = 'translateY(-2px) scale(0.98)';
+                });
+                card.addEventListener('mouseup', function () {
+                    this.style.transform = 'translateY(-5px) scale(1)';
+                });
+                card.addEventListener('mouseleave', function () {
+                    this.style.transform = 'translateY(0px) scale(1)';
+                });
+                card.addEventListener('blur', function () {
+                    this.style.transform = 'translateY(0px) scale(1)';
+                });
+            })(cards[cardIndex], cardIndex);
+        }
     </script>
 </body>
 

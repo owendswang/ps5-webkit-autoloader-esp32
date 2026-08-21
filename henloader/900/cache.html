@@ -7,37 +7,36 @@
     <title>PlayStation Pulse PSFree Host 9.xx - Auto Cache</title>
     <script>history.replaceState(null, null, 'index.html');</script>
     <style>
-        :root { --bg:#050706; --panel:#080c0a; --line:#34443a; --line-bright:#607b68; --text:#f1f6f2; --muted:#b4c1b8; --dim:#86958b; --green:#73f5a6; }
-        * { box-sizing:border-box; margin:0; padding:0; }
-        html { background:var(--bg); }
+* { box-sizing:border-box; margin:0; padding:0; }
+        html { background:#050706; }
         html, body { min-height:100%; }
-        body { background-color:var(--bg); background-image:linear-gradient(rgba(115,245,166,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(115,245,166,.03) 1px,transparent 1px); background-size:32px 32px; color:var(--text); display:flex; flex-direction:column; font:16px/1.5 "SFMono-Regular",Consolas,"Liberation Mono",monospace; min-height:100vh; overflow:hidden; }
-        .container { display:flex; flex:1 0 auto; flex-direction:column; justify-content:center; margin:0 auto; padding:24px 0; width:min(100% - 64px,920px); }
-        .logo-section { background:rgba(8,12,10,.92); border:1px solid var(--line); margin:0 auto 16px; padding:24px 28px 26px; position:relative; width:100%; }
-        .logo-section::before { color:var(--green); content:"●  PS4 / PSFREE HOST"; display:block; font-size:13px; letter-spacing:.12em; margin-bottom:18px; }
-        .logo-section::after { color:var(--dim); content:"SYS / CACHE UPDATE"; font-size:12px; letter-spacing:.08em; position:absolute; right:28px; top:25px; }
-        .main-title { color:var(--text); font-size:clamp(32px,5vw,52px); font-weight:400; letter-spacing:-.07em; line-height:1.05; }
-        .main-title::before { color:var(--green); content:"> "; }
-        .subtitle { color:var(--green); font-size:17px; letter-spacing:.08em; margin-top:14px; }
+        body { background-color:#050706; background-image:linear-gradient(rgba(115,245,166,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(115,245,166,.03) 1px,transparent 1px); background-size:32px 32px; color:#f1f6f2; display:flex; flex-direction:column; font:16px/1.5 "SFMono-Regular",Consolas,"Liberation Mono",monospace; min-height:100vh; overflow:hidden; }
+        .container { display:flex; flex:1 0 auto; flex-direction:column; justify-content:center; margin:0 auto; padding:24px 0; width: calc(100% - 64px); max-width: 920px; }
+        .logo-section { background:rgba(8,12,10,.92); border:1px solid #34443a; margin:0 auto 16px; padding:24px 28px 26px; position:relative; width:100%; }
+        .logo-section::before { color:#73f5a6; content:"●  PS4 / PSFREE HOST"; display:block; font-size:13px; letter-spacing:.12em; margin-bottom:18px; }
+        .logo-section::after { color:#86958b; content:"SYS / CACHE UPDATE"; font-size:12px; letter-spacing:.08em; position:absolute; right:28px; top:25px; }
+        .main-title { color:#f1f6f2; font-size:52px; font-weight:400; letter-spacing:-.07em; line-height:1.05; }
+        .main-title::before { color:#73f5a6; content:"> "; }
+        .subtitle { color:#73f5a6; font-size:17px; letter-spacing:.08em; margin-top:14px; }
         .progress-container { margin:0 auto; width:100%; }
-        .progress-label { color:var(--green); font-size:15px; margin-bottom:10px; }
-        .progress-wrapper { background:var(--panel); border:1px solid var(--line-bright); padding:6px; }
-        .progress-bar { background:#0d120f; border:1px solid var(--line); height:62px; overflow:hidden; position:relative; }
-        .progress-fill { background:var(--green); height:100%; transition:width .3s ease; width:0; }
-        .progress-text { color:var(--text); font-size:20px; font-weight:400; left:50%; position:absolute; text-shadow:0 1px 8px rgba(0,0,0,.8); top:50%; transform:translate(-50%,-50%); z-index:3; }
-        .status-message { color:var(--muted); font-size:15px; margin-top:12px; text-align:left; }
-        .credits { border-top:1px solid var(--line); color:var(--muted); flex:0 0 auto; font-size:13px; margin:0 auto; padding:8px 20px 10px; text-align:center; width:min(100% - 64px,920px); }
+        .progress-label { color:#73f5a6; font-size:15px; margin-bottom:10px; }
+        .progress-wrapper { background:#080c0a; border:1px solid #607b68; padding:6px; }
+        .progress-bar { background:#0d120f; border:1px solid #34443a; height:62px; overflow:hidden; position:relative; }
+        .progress-fill { background:#73f5a6; height:100%; transition:width .3s ease; width:0; }
+        .progress-text { color:#f1f6f2; font-size:20px; font-weight:400; left:50%; position:absolute; text-shadow:0 1px 8px rgba(0,0,0,.8); top:50%; transform:translate(-50%,-50%); z-index:3; }
+        .status-message { color:#b4c1b8; font-size:15px; margin-top:12px; text-align:left; }
+        .credits { border-top:1px solid #34443a; color:#b4c1b8; flex:0 0 auto; font-size:13px; margin:0 auto; padding:8px 20px 10px; text-align:center; width: calc(100% - 64px); max-width: 920px; }
         .credits-line { display:inline; }
-        .credits-line + .credits-line::before { color:var(--line-bright); content:"  //  "; }
-        .credit-label { color:var(--muted); }
-        .credits a { color:var(--text); }
-        .credits a:hover,.credits a:focus { color:var(--green); }
+        .credits-line + .credits-line::before { color:#607b68; content:"  //  "; }
+        .credit-label { color:#b4c1b8; }
+        .credits a { color:#f1f6f2; }
+        .credits a:hover,.credits a:focus { color:#73f5a6; }
         @media (max-width:700px) {
             body { overflow:auto; }
-            .container { justify-content:flex-start; padding:28px 0 22px; width:min(100% - 32px,560px); }
+            .container { justify-content:flex-start; padding:28px 0 22px; width: calc(100% - 32px); max-width: 560px; }
             .logo-section { padding:22px 18px 24px; }
             .logo-section::after { display:none; }
-            .main-title { font-size:clamp(32px,10vw,48px); }
+            .main-title { font-size:48px; }
             .progress-bar { height:56px; }
             .credits-line { display:block; margin:4px 0; }
             .credits-line + .credits-line::before { content:""; }
@@ -76,7 +75,7 @@
             localStorage.is755BCached = false;
         };
         window.applicationCache.onprogress = function (a) {
-            const progress = Math.round(100 * (a.loaded / a.total));
+            var progress = Math.round(100 * (a.loaded / a.total));
             document.getElementById("myBar").style.width = progress + "%";
             document.getElementById("progressText").innerHTML = progress + "%";
         };

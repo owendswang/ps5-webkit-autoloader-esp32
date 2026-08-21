@@ -67,7 +67,7 @@ static String getMimeType(const String &path)
         return "text/html; charset=utf-8";
     if (path.endsWith(".css"))
         return "text/css";
-    if (path.endsWith(".js"))
+    if (path.endsWith(".js") || path.endsWith(".mjs"))
         return "application/javascript";
     if (path.endsWith(".json"))
         return "application/json";
@@ -81,7 +81,7 @@ static String getMimeType(const String &path)
         return "image/svg+xml";
     if (path.endsWith(".ico"))
         return "image/x-icon";
-    if (path.endsWith(".appcache"))
+    if (path.endsWith(".appcache") || path.endsWith(".manifest") || path.endsWith(".cache"))
         return "text/cache-manifest";
     if (path.endsWith(".woff"))
         return "font/woff";
@@ -300,6 +300,9 @@ void httpFileHandler()
     }
 
     String contentType = getMimeType(path);
+
+    if (gzip && contentType == "application/octet-stream")
+        webServer.sendHeader("Content-Encoding", "gzip");
 
     webServer.streamFile(file, contentType);
 
