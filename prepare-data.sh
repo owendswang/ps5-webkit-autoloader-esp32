@@ -78,7 +78,10 @@ minimize_file() {
 
 rm -rf "$OUTPUT_DIR"
 mkdir -p "$OUTPUT_DIR"
-cp -a "$SOURCE_DIR/." "$OUTPUT_DIR/"
+tar -C "$SOURCE_DIR" \
+    --exclude='.git' \
+    --exclude='*/.git' \
+    -cf - . | tar -C "$OUTPUT_DIR" -xf -
 find "$OUTPUT_DIR" -type f -name '*.gz' -delete
 
 if [ "$MODE" = minimize ]; then
