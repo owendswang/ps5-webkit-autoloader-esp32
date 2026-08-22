@@ -4,6 +4,14 @@ Offline PS4 exploit host for ESP32 and ESP8266 boards. Web files are stored in L
 
 The web interface is based on [ps4-psx8-pulse](https://github.com/owendswang/ps4-psx8-pulse).
 
+## Supported Firmware Version
+
+- 6.00 - 11.02
+- 9.00 - 9.60
+- 7.00 - 8.52
+- 6.72
+- 5.05
+
 ## Usage
 
 1. Flash the merged image for your board.
