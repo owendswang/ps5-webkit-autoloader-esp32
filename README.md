@@ -4,6 +4,12 @@ A compact HTTP/HTTPS host for the PS5 WebKit Autoloader, packaged as 4 MB flash 
 
 The web content in `autoloader/` is based on a modified version of the [`ps5-webkit-autoloader`](https://github.com/itsPLK/ps5-webkit-autoloader) frontend. Its bundled [`slopkit`](https://github.com/jordyidk/slopkit) and [`ps5-unified-autoloader`](https://github.com/itsPLK/ps5-unified-autoloader) components also contain project-specific modifications and therefore do not exactly match upstream.
 
+## Firmware Version Supports
+
+- ~~umtx2        1.00 -  5.50~~ NOT SUPPORTED (`System out of memory` Error)
+- poopsploit   7.00 - 12.00
+- P2JB        12.00 - 12.70
+
 ## Usage
 
 1. Plug the ESP32 into the PS5 and turn on the console.
