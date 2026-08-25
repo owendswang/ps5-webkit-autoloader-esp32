@@ -55,6 +55,16 @@ a:active, a:focus { outline: 0; border: none; }
 
 .btn-secondary { padding: .5rem 2rem; font-size: 1rem; }
 
+.btn-disabled {
+  opacity: .45;
+  pointer-events: none;
+}
+
+#fw-status {
+  color: var(--text-color-secondary);
+  padding: 0 1rem;
+}
+
 #main-content { position: relative; box-sizing: border-box; }
 #main-content > div {
   position: absolute;

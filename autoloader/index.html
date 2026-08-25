@@ -5,7 +5,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <title>WebKit Autoloader Installer v0.3.1 by PLK (built 2026-08-19 20:01:44 UTC)</title>
+  <title>WebKit Autoloader Installer v0.4.0 by PLK (built 2026-08-24 00:53:34 UTC)</title>
   <style>
     * {
       margin: 0;
@@ -174,7 +174,7 @@
 
   </main>
 
-  <footer id="footer">WebKit Autoloader Installer v0.3.1 by PLK (built 2026-08-19 20:01:44 UTC)<br />This project is free and open source: github.com/itsPLK/ps5-webkit-autoloader</footer>
+  <footer id="footer">WebKit Autoloader Installer v0.4.0 by PLK (built 2026-08-24 00:53:34 UTC)<br />This project is free and open source: github.com/itsPLK/ps5-webkit-autoloader</footer>
 
   <script>
     (function () {
@@ -186,10 +186,9 @@
       var progressBar = document.getElementById('progressBar');
       var progressPct = document.getElementById('progressPct');
       var completed = false;
-      var failed = false;
-      var lastCacheUrl = '';
 
       var logContainer = document.getElementById('logContainer');
+      var seenLogs = "";
 
       function appendLog(msg) {
         logContainer.hidden = false;
@@ -198,6 +197,42 @@
         logContainer.appendChild(div);
         logContainer.scrollTop = logContainer.scrollHeight;
       }
+
+
+      var logPos = 0;
+      var logXhr = null;
+
+      function pollLogs() {
+        logXhr = new XMLHttpRequest();
+        logXhr.open('GET', '/logs?pos=' + logPos, true);
+        logXhr.onreadystatechange = function () {
+          if (logXhr.readyState === 4) {
+            if (logXhr.status === 200) {
+              var newLogs = logXhr.responseText;
+              if (newLogs.length > 0) {
+                var lines = newLogs.split('\\n');
+                for (var i = 0; i < lines.length; i++) {
+                  if (lines[i].trim() !== '') appendLog(lines[i]);
+                }
+              }
+              var newPosStr = logXhr.getResponseHeader("X-Log-Pos");
+              if (newPosStr) {
+                logPos = parseInt(newPosStr, 10);
+              }
+              // Add a slight delay before reconnecting to reduce server load
+              setTimeout(pollLogs, 100);
+            } else {
+              // Server is down or error
+              if (completed) return; // Stop polling completely if we finished
+              setTimeout(pollLogs, 1000);
+            }
+          }
+        };
+        logXhr.send();
+      }
+      // Start the long-polling loop
+      pollLogs();
+
 
       var AUTOLOADER_URL = '/app/index.html';
 
@@ -217,23 +252,6 @@
         progressWrap.hidden = false;
       }
 
-      function setCacheError(e) {
-        var httpStatus = e && typeof e.status === 'number' && e.status > 0 ? e.status : 0;
-        var errorUrl = e && e.url ? e.url : lastCacheUrl;
-        var reason = e && e.reason ? e.reason : '';
-
-        failed = true;
-        completed = true;
-        statusEl.textContent = httpStatus ? 'Caching failed (HTTP ' + httpStatus + ')' : 'Caching failed';
-        statusEl.style.color = '#ef4444';
-
-        if (errorUrl) {
-          detailEl.textContent = 'Could not cache ' + errorUrl + (reason ? ' (' + reason + ')' : '') + '. Fix the server response, then reload this page.';
-        } else {
-          detailEl.textContent = 'A required cache resource could not be downloaded' + (reason ? ' (' + reason + ')' : '') + '. Fix the server response, then reload this page.';
-        }
-      }
-
       function goToAutoloader() {
         if (completed) {
           return;
@@ -242,8 +260,12 @@
         window.location.replace(AUTOLOADER_URL);
       }
 
+      function cacheFailed() {
+        statusEl.textContent = 'Cache failed';
+        detailEl.textContent = 'Keep the ESP network connected, then reload this page to try again.';
+      }
+
       window.addEventListener('load', function () {
-        if (failed) return;
         setCaching();
 
         /* AppCache may already be current before the load handler runs. */
@@ -253,7 +275,7 @@
             return;
           }
           if (window.applicationCache &&
-              window.applicationCache.status === window.applicationCache.IDLE) {
+              window.applicationCache.status === window.applicationCache.IDLE) {   
             clearInterval(waitTimer);
             goToAutoloader();
           }
@@ -279,30 +301,19 @@
           appendLog("[AppCache] Downloading cache...");
         });
         window.applicationCache.addEventListener('progress', function (e) {
-          if (e.url) {
-            lastCacheUrl = e.url;
-            appendLog("[AppCache] Fetching: " + e.url);
-          }
+          if (e.url) appendLog("[AppCache] Fetching: " + e.url);
           if (e.total && e.total > 0) {
             var pct = Math.min(99, Math.round((e.loaded / e.total) * 100));
             setProgress(pct);
           }
         });
         window.applicationCache.addEventListener('error', function (e) {
-          var httpStatus = e && e.status ? ' HTTP ' + e.status : '';
-          var errorUrl = e && e.url ? ' URL: ' + e.url : (lastCacheUrl ? ' Last URL: ' + lastCacheUrl : '');
-          appendLog("[AppCache] Error!" + httpStatus + errorUrl + " AppCache status: " + window.applicationCache.status);
+          appendLog("[AppCache] Error occurred! Status: " + window.applicationCache.status);
           logContainer.className = 'error';
-          setCacheError(e);
+          cacheFailed();
         });
         window.applicationCache.addEventListener('obsolete', function (e) {
-          appendLog("[AppCache] Manifest is obsolete (it may have returned HTTP 404 or 410).");
-          failed = true;
-          completed = true;
-          statusEl.textContent = 'Caching failed';
-          statusEl.style.color = '#ef4444';
-          detailEl.textContent = 'The cache manifest is unavailable or obsolete (possibly HTTP 404/410). Restore /cache.appcache, then reload this page.';
-          logContainer.className = 'error';
+          appendLog("[AppCache] Manifest is obsolete.");
         });
         window.applicationCache.addEventListener('cached', function() {
           appendLog("[AppCache] Caching complete.");

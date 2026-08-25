@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PS5 SlopKit Jailbreak</title>
+  <link rel="stylesheet" href="main.css?v=final">
+</head>
+<body>
+  <div class="p-2">
+    <h1 class="text-center">PS5 SlopKit Jailbreak (7.00-12.70)</h1>
+    <p class="text-center text-secondary">PLK's fork</p>
+    <p class="text-center" id="top-bar-text">Current Firmware: <span class="fw-bold" id="current-fw">Unknown</span></p>
+    <p class="text-center text-secondary">Poopsploit: 7.00-12.00 &middot; P2JB: 12.02-12.70</p>
+  </div>
+
+  <div id="main-content">
+    <div id="pre-jb-view" class="selected">
+      <a tabindex="0" class="btn fw-bold" id="run-jb">Jailbreak</a>
+      <p id="fw-status" hidden></p>
+    </div>
+  </div>
+
+  <div class="position-relative text-center p-2 mb-2">
+    <p class="text-secondary">Credits</p>
+    <p class="text-secondary mt-2">Jordy, Egy, Sonic, Yenyen, Zeco, Gezine, Echostretch, Ufm42, TheFloW, John Tornblom, Flatz, Idlesauce and PS5 R&amp;D Discord.</p>
+  </div>
+
+  <script>
+    try {
+      var POOPS_HREF = "slopkit/poops.html?go=1&auto=1&production=1&trigger=netcontrol"
+          + "&attempts=8&only=ps0_preflight,ps1_prepare,ps3_stage0,ps4_validate,"
+          + "ps5_stage1,ps6_stage2,ps8_stage3,ps9_stage4,ps10_stage5&log=debug"
+          + "&payload=1&v=final";
+      var P2JB_HREF = "slopkit/p2jb.html?go=1&auto=1&production=1&log=debug"
+          + "&payload=1&v=final";
+      var firmwareMatch = /PlayStation 5\/(\d+\.\d+)/.exec(navigator.userAgent);
+      var firmware = firmwareMatch ? firmwareMatch[1] : "";
+      document.getElementById("current-fw").textContent = firmware || "Not detected";
+      var jbButton = document.getElementById("run-jb");
+      var fwStatus = document.getElementById("fw-status");
+      var m = /^(\d+)\.(\d+)$/.exec(firmware);
+      var fwNum = m ? parseInt(m[1], 10) * 100 + parseInt(m[2], 10) : -1;
+      var href = "";
+      if (fwNum >= 700 && fwNum <= 1200) href = POOPS_HREF;
+      else if (fwNum >= 1202 && fwNum <= 1270) href = P2JB_HREF;
+      if (href) {
+        jbButton.setAttribute("href", href);
+        try { jbButton.focus(); } catch (e) { }
+      } else {
+        jbButton.classList.add("btn-disabled");
+        jbButton.setAttribute("aria-disabled", "true");
+        fwStatus.hidden = false;
+        fwStatus.textContent = "Unsupported firmware"
+            + (firmware ? ": " + firmware : "")
+            + ". Supported: 7.00-12.00 (Poopsploit), 12.02-12.70 (P2JB).";
+      }
+    } catch (e) { }
+  </script>
+</body>
+</html>

