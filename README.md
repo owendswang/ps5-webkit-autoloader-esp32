@@ -2,7 +2,7 @@
 
 A compact HTTP/HTTPS host for the PS5 WebKit Autoloader, packaged as 4 MB flash images for ESP32-PICO, ESP32-S2, and ESP-12F (ESP8266) boards. All targets use LittleFS and do not require PSRAM.
 
-The web content in `autoloader/` is based on a modified version of the [`ps5-webkit-autoloader`](https://github.com/itsPLK/ps5-webkit-autoloader) frontend. Its bundled [`slopkit`](https://github.com/jordyidk/slopkit) and [`ps5-unified-autoloader`](https://github.com/itsPLK/ps5-unified-autoloader) components also contain project-specific modifications and therefore do not exactly match upstream.
+The web content in `autoloader/` is based on a modified version of the [`ps5-webkit-autoloader`](https://github.com/itsPLK/ps5-webkit-autoloader) frontend. Its bundled [`slopkit`](https://github.com/itsPLK/slopkit), [`umtx2`](https://github.com/idlesauce/umtx2) and [`ps5-unified-autoloader`](https://github.com/owendswang/ps5-unified-autoloader/tree/feat/install-webkit-shortcut) components also contain project-specific modifications and therefore do not exactly match upstream.
 
 ## Firmware Version Supports
 
@@ -26,7 +26,7 @@ If an attempt fails, follow the on-screen instruction to reboot and try again. I
 
 - Arduino CLI
 - Arduino ESP32 core 2.0.11
-- Arduino ESP8266 core 3.1.2 (required for `make 8266`)
+- ~~Arduino ESP8266 core 3.1.2 (required for `make 8266`)~~
 
 Install the Arduino CLI and required core:
 
