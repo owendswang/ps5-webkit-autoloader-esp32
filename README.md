@@ -2,10 +2,11 @@
 
 Offline PS4 exploit host for ESP32 and ESP8266 boards. Web files are stored in LittleFS, minimized and served with gzip compression. No PSRAM is required.
 
-The web interface is based on [ps4-psx8-pulse](https://github.com/owendswang/ps4-psx8-pulse).
+The web interface is based on [ps4-psx8-pulse](https://github.com/owendswang/ps4-psx8-pulse) and [raw-game](https://raw-game.com/zrm/).
 
 ## Supported Firmware Version
 
+- 11.50 - 13.00 except 11.52
 - 6.00 - 11.02
 - 9.00 - 9.60
 - 7.00 - 8.52
@@ -43,7 +44,6 @@ make pico-8m
 make s2
 make s3
 make c3
-make 8266
 ```
 
 Generated firmware is written to `build/`.
