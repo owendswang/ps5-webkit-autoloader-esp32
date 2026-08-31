@@ -106,6 +106,14 @@ static void fileHandler(Server &server) {
     logRequest(server);
     String path = normalizePath(server.uri());
 
+    if (path == "/" && server.hostHeader().equalsIgnoreCase("www.playstation.com")) {
+        Serial.printf("[HTTP] Redirect: %s%s -> %s\n",
+                      server.hostHeader().c_str(), path.c_str(), PORTAL_REDIRECT_URL);
+        server.sendHeader("Location", PORTAL_REDIRECT_URL, true);
+        server.send(302, "text/plain", "");
+        return;
+    }
+
     if (path.startsWith("/update/ps4/list/")) {
         int start = strlen("/update/ps4/list/");
         int end = path.indexOf('/', start);
