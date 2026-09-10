@@ -26,8 +26,11 @@ PICO_8M_BUILD_DIR := $(BUILD_DIR)/pico-8m
 PICO_8M_SKETCH_DIR := $(PICO_8M_BUILD_DIR)/sketch/$(PROJECT_NAME)
 PICO_8M_OUTPUT_DIR := $(PICO_8M_BUILD_DIR)/output
 
-ARDUINO_ROOT ?= $(HOME)/.arduino15/packages/esp32
-ESP8266_ROOT ?= $(abspath $(ARDUINO_ROOT)/../esp8266)
+ARDUINO_DATA_DIR := $(HOME)/.arduino15-esp32-2
+ARDUINO_CONFIG := $(HOME)/.arduino15/arduino-cli-esp32-2.yaml
+ARDUINO_ROOT := $(ARDUINO_DATA_DIR)/packages/esp32
+ESP8266_ROOT := $(ARDUINO_DATA_DIR)/packages/esp8266
+ARDUINO_CLI := arduino-cli --config-file $(ARDUINO_CONFIG)
 CORE_VERSION := 2.0.11
 CORE_DIR := $(ARDUINO_ROOT)/hardware/esp32/$(CORE_VERSION)
 ESP8266_CORE_VERSION ?= 3.1.2
@@ -140,7 +143,7 @@ check-littlefs: check-data
 	@test -x "$(LITTLEFS_TOOL)" || { echo "Error: mklittlefs was not found" >&2; exit 1; }
 
 check: check-littlefs
-	@command -v arduino-cli >/dev/null
+	@command -v $(ARDUINO_CLI) >/dev/null
 	command -v python3 >/dev/null
 	test -d "$(CORE_DIR)" || { echo "Error: esp32:esp32@$(CORE_VERSION) is not installed" >&2; exit 1; }
 	test -f "$(ESPTOOL)" || { echo "Error: $(ESPTOOL) was not found" >&2; exit 1; }
@@ -148,7 +151,7 @@ check: check-littlefs
 	test -f "$(PROJECT_DIR)/$(PROJECT_NAME).ino"
 
 check-8266: check-data
-	@command -v arduino-cli >/dev/null
+	@command -v $(ARDUINO_CLI) >/dev/null
 	command -v python3 >/dev/null
 	test -d "$(ESP8266_CORE_DIR)" || { echo "Error: esp8266:esp8266@$(ESP8266_CORE_VERSION) is not installed" >&2; exit 1; }
 	test -f "$(ESP8266_ESPTOOL)" || { echo "Error: ESP8266 esptool was not found" >&2; exit 1; }
@@ -159,7 +162,7 @@ $(PICO_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(PROJECT_DIR)/partitions.csv Ma
 	mkdir -p "$(PICO_SKETCH_DIR)"
 	cp "$(PROJECT_DIR)/$(PROJECT_NAME).ino" "$(PICO_SKETCH_DIR)/"
 	cp "$(PROJECT_DIR)/partitions.csv" "$(PICO_SKETCH_DIR)/"
-	arduino-cli compile \
+	$(ARDUINO_CLI) compile \
 	    --fqbn "$(PICO_FQBN)" \
 	    --output-dir "$(PICO_BUILD_DIR)" \
 	    --build-property "build.partitions=partitions" \
@@ -173,7 +176,7 @@ $(S2_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(PROJECT_DIR)/partitions.csv Make
 	mkdir -p "$(S2_SKETCH_DIR)"
 	cp "$(PROJECT_DIR)/$(PROJECT_NAME).ino" "$(S2_SKETCH_DIR)/"
 	cp "$(PROJECT_DIR)/partitions.csv" "$(S2_SKETCH_DIR)/"
-	arduino-cli compile \
+	$(ARDUINO_CLI) compile \
 	    --fqbn "$(S2_FQBN)" \
 	    --output-dir "$(S2_BUILD_DIR)" \
 	    --build-property "build.partitions=partitions" \
@@ -187,7 +190,7 @@ $(S3_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(PROJECT_DIR)/partitions.csv Make
 	mkdir -p "$(S3_SKETCH_DIR)"
 	cp "$(PROJECT_DIR)/$(PROJECT_NAME).ino" "$(S3_SKETCH_DIR)/"
 	cp "$(PROJECT_DIR)/partitions.csv" "$(S3_SKETCH_DIR)/"
-	arduino-cli compile \
+	$(ARDUINO_CLI) compile \
 	    --fqbn "$(S3_FQBN)" \
 	    --output-dir "$(S3_BUILD_DIR)" \
 	    --build-property "build.partitions=partitions" \
@@ -201,7 +204,7 @@ $(PICO_8M_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(PROJECT_DIR)/partitions-8m.
 	mkdir -p "$(PICO_8M_SKETCH_DIR)" "$(PICO_8M_OUTPUT_DIR)"
 	cp "$(PROJECT_DIR)/$(PROJECT_NAME).ino" "$(PICO_8M_SKETCH_DIR)/"
 	cp "$(PROJECT_DIR)/partitions-8m.csv" "$(PICO_8M_SKETCH_DIR)/partitions.csv"
-	arduino-cli compile \
+	$(ARDUINO_CLI) compile \
 	    --fqbn "$(PICO_8M_FQBN)" \
 	    --output-dir "$(PICO_8M_OUTPUT_DIR)" \
 	    --build-property "build.partitions=partitions" \
@@ -215,7 +218,7 @@ $(C3_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(PROJECT_DIR)/partitions.csv Make
 	mkdir -p "$(C3_SKETCH_DIR)"
 	cp "$(PROJECT_DIR)/$(PROJECT_NAME).ino" "$(C3_SKETCH_DIR)/"
 	cp "$(PROJECT_DIR)/partitions.csv" "$(C3_SKETCH_DIR)/"
-	arduino-cli compile \
+	$(ARDUINO_CLI) compile \
 	    --fqbn "$(C3_FQBN)" \
 	    --output-dir "$(C3_BUILD_DIR)" \
 	    --build-property "build.partitions=partitions" \
@@ -228,7 +231,7 @@ $(ESP8266_APP): $(PROJECT_DIR)/esp8266-arduino.ino Makefile
 	@rm -rf "$(ESP8266_SKETCH_DIR)" "$(ESP8266_BUILD_DIR)/output"
 	mkdir -p "$(ESP8266_SKETCH_DIR)" "$(ESP8266_BUILD_DIR)/output"
 	cp "$(PROJECT_DIR)/esp8266-arduino.ino" "$(ESP8266_SKETCH_DIR)/"
-	arduino-cli compile --fqbn "$(ESP8266_FQBN)" --output-dir "$(ESP8266_BUILD_DIR)/output" "$(ESP8266_SKETCH_DIR)"
+	$(ARDUINO_CLI) compile --fqbn "$(ESP8266_FQBN)" --output-dir "$(ESP8266_BUILD_DIR)/output" "$(ESP8266_SKETCH_DIR)"
 	size=$$(stat -c %s "$(ESP8266_APP)")
 	test "$$size" -le 1044464 || { echo "Error: ESP8266 application exceeds the 4M3M sketch area: $$size bytes" >&2; exit 1; }
 
