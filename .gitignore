@@ -10,5 +10,5 @@ __pycache__/
 *.bak
 /slopkit.*
 /autoloader-*
-/autoloader.mini
-/henloader
+/*.mini/
+/henloader/

@@ -7,6 +7,10 @@ ARDUINO_INDEX="https://espressif.github.io/arduino-esp32/package_esp32_index.jso
 ESP8266_INDEX="https://arduino.esp8266.com/stable/package_esp8266com_index.json"
 ESP8266_CORE_VERSION="3.1.2"
 
+ARDUINO_DATA_DIR="$HOME/.arduino15-esp32-2"
+ARDUINO_STAGING_DIR="$HOME/.arduino15/staging"
+ARDUINO_CONFIG="$HOME/.arduino15/arduino-cli-esp32-2.yaml"
+
 if [ "$(id -u)" -eq 0 ]; then
     SUDO=""
 else
@@ -47,42 +51,44 @@ if ! command -v arduino-cli >/dev/null 2>&1; then
         /usr/local/bin/arduino-cli
 fi
 
-if [ ! -f "$HOME/.arduino15/arduino-cli.yaml" ]; then
-    arduino-cli config init
-fi
+mkdir -p "$ARDUINO_DATA_DIR"
+mkdir -p "$ARDUINO_STAGING_DIR"
 
-if ! arduino-cli config dump | grep -Fq "$ARDUINO_INDEX"; then
-    arduino-cli config add \
-        board_manager.additional_urls \
-        "$ARDUINO_INDEX"
-fi
+cat > "$ARDUINO_CONFIG" <<EOF
+directories:
+  data: $ARDUINO_DATA_DIR
+  downloads: $ARDUINO_STAGING_DIR
+board_manager:
+  additional_urls:
+    - $ARDUINO_INDEX
+    - $ESP8266_INDEX
+EOF
 
-if ! arduino-cli config dump | grep -Fq "$ESP8266_INDEX"; then
-    arduino-cli config add \
-        board_manager.additional_urls \
-        "$ESP8266_INDEX"
-fi
+ARDUINO_CLI=(
+    arduino-cli
+    --config-file "$ARDUINO_CONFIG"
+)
 
-arduino-cli core update-index
+"${ARDUINO_CLI[@]}" core update-index
 
 INSTALLED_VERSION="$(
-    arduino-cli core list |
+    "${ARDUINO_CLI[@]}" core list |
     awk '$1 == "esp32:esp32" {print $2}'
 )"
 
 if [ "$INSTALLED_VERSION" != "$CORE_VERSION" ]; then
-    arduino-cli core install "esp32:esp32@$CORE_VERSION"
+    "${ARDUINO_CLI[@]}" core install "esp32:esp32@$CORE_VERSION"
 fi
 
 INSTALLED_ESP8266_VERSION="$(
-    arduino-cli core list |
+    "${ARDUINO_CLI[@]}" core list |
     awk '$1 == "esp8266:esp8266" {print $2}'
 )"
 
 if [ "$INSTALLED_ESP8266_VERSION" != "$ESP8266_CORE_VERSION" ]; then
-    arduino-cli core install "esp8266:esp8266@$ESP8266_CORE_VERSION"
+    "${ARDUINO_CLI[@]}" core install "esp8266:esp8266@$ESP8266_CORE_VERSION"
 fi
 
 echo
-arduino-cli version
-arduino-cli core list
+"${ARDUINO_CLI[@]}" version
+"${ARDUINO_CLI[@]}" core list

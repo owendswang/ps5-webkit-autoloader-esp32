@@ -30,8 +30,11 @@ PICO_8M_BUILD_DIR := $(BUILD_DIR)/pico-8m
 PICO_8M_SKETCH_DIR := $(PICO_8M_BUILD_DIR)/sketch/$(PROJECT_NAME)
 PICO_8M_OUTPUT_DIR := $(PICO_8M_BUILD_DIR)/output
 
-ARDUINO_ROOT ?= $(HOME)/.arduino15/packages/esp32
-ESP8266_ROOT ?= $(abspath $(ARDUINO_ROOT)/../esp8266)
+ARDUINO_DATA_DIR := $(HOME)/.arduino15-esp32-2
+ARDUINO_CONFIG := $(HOME)/.arduino15/arduino-cli-esp32-2.yaml
+ARDUINO_ROOT := $(ARDUINO_DATA_DIR)/packages/esp32
+ESP8266_ROOT := $(ARDUINO_DATA_DIR)/packages/esp8266
+ARDUINO_CLI := arduino-cli --config-file $(ARDUINO_CONFIG)
 CORE_VERSION := 2.0.11
 CORE_DIR := $(ARDUINO_ROOT)/hardware/esp32/$(CORE_VERSION)
 ESP8266_CORE_VERSION ?= 3.1.2
@@ -194,7 +197,7 @@ $(PICO_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(SERVER_HEADER) $(PROJECT_DIR)/
 	mkdir -p "$(PICO_SKETCH_DIR)"
 	cp "$(PROJECT_DIR)/$(PROJECT_NAME).ino" "$(SERVER_HEADER)" "$(PICO_SKETCH_DIR)/"
 	cp "$(PROJECT_DIR)/partitions.csv" "$(PICO_SKETCH_DIR)/"
-	arduino-cli compile \
+	$(ARDUINO_CLI) compile \
 	    --fqbn "$(PICO_FQBN)" \
 	    --output-dir "$(PICO_BUILD_DIR)" \
 	    --build-property "build.partitions=partitions" \
@@ -208,7 +211,7 @@ $(S2_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(SERVER_HEADER) $(PROJECT_DIR)/pa
 	mkdir -p "$(S2_SKETCH_DIR)"
 	cp "$(PROJECT_DIR)/$(PROJECT_NAME).ino" "$(SERVER_HEADER)" "$(S2_SKETCH_DIR)/"
 	cp "$(PROJECT_DIR)/partitions.csv" "$(S2_SKETCH_DIR)/"
-	arduino-cli compile \
+	$(ARDUINO_CLI) compile \
 	    --fqbn "$(S2_FQBN)" \
 	    --output-dir "$(S2_BUILD_DIR)" \
 	    --build-property "build.partitions=partitions" \
@@ -222,7 +225,7 @@ $(S3_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(SERVER_HEADER) $(PROJECT_DIR)/pa
 	mkdir -p "$(S3_SKETCH_DIR)"
 	cp "$(PROJECT_DIR)/$(PROJECT_NAME).ino" "$(SERVER_HEADER)" "$(S3_SKETCH_DIR)/"
 	cp "$(PROJECT_DIR)/partitions.csv" "$(S3_SKETCH_DIR)/"
-	arduino-cli compile \
+	$(ARDUINO_CLI) compile \
 	    --fqbn "$(S3_FQBN)" \
 	    --output-dir "$(S3_BUILD_DIR)" \
 	    --build-property "build.partitions=partitions" \
@@ -236,7 +239,7 @@ $(PICO_8M_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(SERVER_HEADER) $(PROJECT_DI
 	mkdir -p "$(PICO_8M_SKETCH_DIR)" "$(PICO_8M_OUTPUT_DIR)"
 	cp "$(PROJECT_DIR)/$(PROJECT_NAME).ino" "$(SERVER_HEADER)" "$(PICO_8M_SKETCH_DIR)/"
 	cp "$(PROJECT_DIR)/partitions-8m.csv" "$(PICO_8M_SKETCH_DIR)/partitions.csv"
-	arduino-cli compile \
+	$(ARDUINO_CLI) compile \
 	    --fqbn "$(PICO_8M_FQBN)" \
 	    --output-dir "$(PICO_8M_OUTPUT_DIR)" \
 	    --build-property "build.partitions=partitions" \
@@ -250,7 +253,7 @@ $(C3_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(SERVER_HEADER) $(PROJECT_DIR)/pa
 	mkdir -p "$(C3_SKETCH_DIR)"
 	cp "$(PROJECT_DIR)/$(PROJECT_NAME).ino" "$(SERVER_HEADER)" "$(C3_SKETCH_DIR)/"
 	cp "$(PROJECT_DIR)/partitions.csv" "$(C3_SKETCH_DIR)/"
-	arduino-cli compile \
+	$(ARDUINO_CLI) compile \
 	    --fqbn "$(C3_FQBN)" \
 	    --output-dir "$(C3_BUILD_DIR)" \
 	    --build-property "build.partitions=partitions" \
@@ -263,7 +266,7 @@ $(ESP8266_APP): $(PROJECT_DIR)/esp8266-arduino.ino $(SERVER_HEADER) Makefile
 	@rm -rf "$(ESP8266_SKETCH_DIR)" "$(ESP8266_BUILD_DIR)/output"
 	mkdir -p "$(ESP8266_SKETCH_DIR)" "$(ESP8266_BUILD_DIR)/output"
 	cp "$(PROJECT_DIR)/esp8266-arduino.ino" "$(PROJECT_DIR)/server_certs.h" "$(ESP8266_SKETCH_DIR)/"
-	arduino-cli compile --fqbn "$(ESP8266_FQBN)" --output-dir "$(ESP8266_BUILD_DIR)/output" "$(ESP8266_SKETCH_DIR)"
+	$(ARDUINO_CLI) compile --fqbn "$(ESP8266_FQBN)" --output-dir "$(ESP8266_BUILD_DIR)/output" "$(ESP8266_SKETCH_DIR)"
 	size=$$(stat -c %s "$(ESP8266_APP)")
 	test "$$size" -le 1044464 || { echo "Error: ESP8266 application exceeds the 4M3M sketch area: $$size bytes" >&2; exit 1; }
 
