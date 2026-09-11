@@ -19,8 +19,6 @@ static const char *NO_CACHE_VALUE = "no-store, no-cache, must-revalidate, max-ag
 DNSServer dnsServer;
 ESP8266WebServer webServer(80);
 BearSSL::ESP8266WebServerSecure httpsServer(443);
-BearSSL::X509List serverCertificate((const char *)server_crt);
-BearSSL::PrivateKey serverPrivateKey((const char *)server_key);
 
 static void logHeap(const char *where) {
     Serial.printf("[HEAP] %s: free=%u\n", where, ESP.getFreeHeap());
@@ -59,8 +57,11 @@ static void noCache(Server &server) {
 
 template <typename Server>
 static void logRequest(Server &server) {
-    Serial.printf("[HTTP] %s %s\n", server.method() == HTTP_GET ? "GET" :
+    Serial.printf("[HTTP] %s %s", server.method() == HTTP_GET ? "GET" :
                   server.method() == HTTP_POST ? "POST" : "OTHER", server.uri().c_str());
+    for (int i = 0; i < server.args(); i++)
+        Serial.printf("%c%s=%s", i ? '&' : '?', server.argName(i).c_str(), server.arg(i).c_str());
+    Serial.println();
 }
 
 template <typename Server>
@@ -68,6 +69,13 @@ static void fileHandler(Server &server) {
     logHeap("file begin");
     logRequest(server);
     String path = normalizePath(server.uri());
+
+    if (path.startsWith("/networktest/")) {
+        noCache(server);
+        server.send(200, "text/plain", "OK");
+        return;
+    }
+
     if (path.startsWith(PAYLOAD_MIRROR_PREFIX)) {
         String original = path;
         path = String(PAYLOAD_LOCAL_PREFIX) + path.substring(strlen(PAYLOAD_MIRROR_PREFIX));
@@ -119,54 +127,72 @@ static void remoteLog(Server &server) {
 }
 
 template <typename Server>
-static void networkTest(Server &server) {
-    logRequest(server);
-    noCache(server);
-    server.send(200, "text/plain", "OK");
-}
-
-template <typename Server>
 static void setupRoutes(Server &server) {
-    server.on("/generate_204", HTTP_GET, [&server]() { noCache(server); server.send(204); });
-    server.on("/gen_204", HTTP_GET, [&server]() { noCache(server); server.send(204); });
-    server.on("/hotspot-detect.html", HTTP_GET, [&server]() { noCache(server); server.send(200, "text/html", "Success"); });
-    server.on("/connecttest.txt", HTTP_GET, [&server]() { noCache(server); server.send(200, "text/plain", "Microsoft Connect Test"); });
-    server.on("/ncsi.txt", HTTP_GET, [&server]() { noCache(server); server.send(200, "text/plain", "Microsoft NCSI"); });
-    server.on("/redirect", HTTP_GET, [&server]() { noCache(server); server.send(200, "text/plain", "Success"); });
-    server.on("/netstart/icst", HTTP_GET, [&server]() { noCache(server); server.send(200, "text/plain", "Success"); });
+    server.on("/generate_204", HTTP_GET, [&server]() { logRequest(server); noCache(server); server.send(204); });
+    server.on("/gen_204", HTTP_GET, [&server]() { logRequest(server); noCache(server); server.send(204); });
+    server.on("/hotspot-detect.html", HTTP_GET, [&server]() { logRequest(server); noCache(server); server.send(200, "text/html", "Success"); });
+    server.on("/connecttest.txt", HTTP_GET, [&server]() { logRequest(server); noCache(server); server.send(200, "text/plain", "Microsoft Connect Test"); });
+    server.on("/ncsi.txt", HTTP_GET, [&server]() { logRequest(server); noCache(server); server.send(200, "text/plain", "Microsoft NCSI"); });
+    server.on("/redirect", HTTP_GET, [&server]() { logRequest(server); noCache(server); server.send(200, "text/plain", "Success"); });
+    server.on("/netstart/icst", HTTP_GET, [&server]() { logRequest(server); noCache(server); server.send(200, "text/plain", "Success"); });
     // server.on("/__poops_log", HTTP_POST, [&server]() { remoteLog(server); });
-    server.on("/networktest/*", HTTP_ANY, [&server]() { networkTest(server); });
     server.onNotFound([&server]() { fileHandler(server); });
     server.begin();
 }
 
 void setup() {
     Serial.begin(115200);
-    delay(500);
-    Serial.println("\nBOOT ESP8266 ESP-12F");
-    Serial.printf("Flash size: %u MB, CPU: %u MHz\n", ESP.getFlashChipSize() / 1024 / 1024, ESP.getCpuFreqMHz());
-    if (!LittleFS.begin()) Serial.println("LittleFS mount failed");
+    Serial.setDebugOutput(false);
+    delay(1000);
+
+    Serial.println("\nBOOT ESP8266");
+    Serial.printf("Core: %s, SDK: %s\n", ESP.getCoreVersion().c_str(), ESP.getSdkVersion());
+    Serial.printf("Reset: %s\n", ESP.getResetReason().c_str());
+    Serial.printf("Flash: configured=%u MB, detected=%u MB, CPU=%u MHz\n",
+                  ESP.getFlashChipSize() / 1024 / 1024,
+                  ESP.getFlashChipRealSize() / 1024 / 1024,
+                  ESP.getCpuFreqMHz());
+
+    if (!LittleFS.begin()) Serial.println("LittleFS: FAILED");
     else {
         FSInfo info;
         LittleFS.info(info);
-        Serial.printf("LittleFS mounted: %u bytes\n", info.totalBytes);
+        Serial.printf("LittleFS: OK, total=%u, used=%u bytes\n", info.totalBytes, info.usedBytes);
     }
+
     WiFi.persistent(false);
+    WiFi.mode(WIFI_OFF);
+    delay(200);
     WiFi.mode(WIFI_AP);
+
     Serial.printf("softAPConfig: %s\n", WiFi.softAPConfig(AP_IP, AP_GATEWAY, AP_SUBNET) ? "OK" : "FAILED");
     bool ap = WiFi.softAP(AP_SSID, AP_PASSWORD);
-    Serial.printf("softAP: %s, IP: %s\n", ap ? "OK" : "FAILED", WiFi.softAPIP().toString().c_str());
+    Serial.printf("softAP: %s\n", ap ? "OK" : "FAILED");
     if (!ap) while (true) delay(1000);
+
+    Serial.printf("AP IP: %s\n", WiFi.softAPIP().toString().c_str());
+    Serial.printf("SSID: %s\n", WiFi.softAPSSID().c_str());
+    Serial.printf("Channel: %d\n", WiFi.channel());
+    Serial.printf("MAC: %s\n", WiFi.softAPmacAddress().c_str());
+
     Serial.printf("DNS: %s\n", dnsServer.start(53, "*", AP_IP) ? "OK" : "FAILED");
+
+    Serial.println("Starting HTTP");
     setupRoutes(webServer);
+    logHeap("HTTP ready");
+
+    Serial.println("Starting HTTPS");
+    static BearSSL::X509List serverCertificate((const char *)server_crt);
+    static BearSSL::PrivateKey serverPrivateKey((const char *)server_key);
     httpsServer.getServer().setECCert(&serverCertificate, BR_KEYTYPE_KEYX | BR_KEYTYPE_SIGN, &serverPrivateKey);
     setupRoutes(httpsServer);
-    Serial.println("HTTP/HTTPS: OK\nREADY");
+    logHeap("HTTPS ready");
+    Serial.println("READY");
 }
 
 void loop() {
     dnsServer.processNextRequest();
     webServer.handleClient();
     httpsServer.handleClient();
-    delay(1);
+    delay(2);
 }
