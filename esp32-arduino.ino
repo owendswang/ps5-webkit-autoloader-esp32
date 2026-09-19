@@ -7,12 +7,18 @@
 #include "esp_arduino_version.h"
 #include "esp_idf_version.h"
 
+#ifdef LED_PIN
+#ifndef LED_ON_LEVEL
+#define LED_ON_LEVEL LOW
+#endif
+static const uint32_t LED_ACTIVITY_MS = 50;
+
+static uint32_t ledOffUntil = 0;
+#endif
+
 static const char *AP_SSID = "ESP32_PORTAL";
 static const char *AP_PASSWORD = "12345678";
 static const char *PORTAL_REDIRECT_URL = "http://192.168.4.1/";
-
-static const char *PAYLOAD_MIRROR_PREFIX = "/ps5-payloads-mirror/";
-static const char *PAYLOAD_LOCAL_PREFIX = "/pldmrr/";
 
 static const IPAddress AP_IP(192, 168, 4, 1);
 static const IPAddress AP_GATEWAY(192, 168, 4, 1);
@@ -23,6 +29,23 @@ WebServer webServer(80);
 
 static const char *NO_CACHE_VALUE =
     "no-store, no-cache, must-revalidate, max-age=0";
+
+#ifdef LED_PIN
+static void ledActivity()
+{
+    digitalWrite(LED_PIN, LED_ON_LEVEL);
+    ledOffUntil = millis() + LED_ACTIVITY_MS;
+}
+
+static void ledUpdate()
+{
+    if (ledOffUntil && (int32_t)(millis() - ledOffUntil) >= 0)
+    {
+        digitalWrite(LED_PIN, !LED_ON_LEVEL);
+        ledOffUntil = 0;
+    }
+}
+#endif
 
 static void setHttpNoCacheHeaders()
 {
@@ -43,6 +66,10 @@ static void logHeap(const char *context)
 
 static void logHttpRequest()
 {
+#ifdef LED_PIN
+    ledActivity();
+#endif
+
     const char *method = webServer.method() == HTTP_GET ? "GET" :
                          webServer.method() == HTTP_POST ? "POST" : "OTHER";
 
@@ -238,20 +265,6 @@ void httpFileHandler()
         return;
     }
 
-    if (path.startsWith(PAYLOAD_MIRROR_PREFIX))
-    {
-        String originalPath = path;
-
-        path = String(PAYLOAD_LOCAL_PREFIX) +
-               path.substring(strlen(PAYLOAD_MIRROR_PREFIX));
-
-        Serial.printf(
-            "[HTTP] Rewrite: %s -> %s\n",
-            originalPath.c_str(),
-            path.c_str()
-        );
-    }
-
     if (path.endsWith("/"))
     {
         path += "index.html";
@@ -386,6 +399,11 @@ void setupWebServer()
 
 void setup()
 {
+#ifdef LED_PIN
+    pinMode(LED_PIN, OUTPUT);
+    digitalWrite(LED_PIN, !LED_ON_LEVEL);
+#endif
+
     Serial.begin(115200);
 
     delay(1000);
@@ -492,8 +510,10 @@ void setup()
 void loop()
 {
     dnsServer.processNextRequest();
-
     webServer.handleClient();
+#ifdef LED_PIN
+    ledUpdate();
+#endif
 
     delay(2);
 }

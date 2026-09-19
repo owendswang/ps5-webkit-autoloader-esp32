@@ -164,6 +164,7 @@ $(PICO_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(PROJECT_DIR)/partitions.csv Ma
 	cp "$(PROJECT_DIR)/partitions.csv" "$(PICO_SKETCH_DIR)/"
 	$(ARDUINO_CLI) compile \
 	    --fqbn "$(PICO_FQBN)" \
+	    --build-property "compiler.cpp.extra_flags=-DLED_PIN=10 -DLED_ON_LEVEL=HIGH" \
 	    --output-dir "$(PICO_BUILD_DIR)" \
 	    --build-property "build.partitions=partitions" \
 	    --build-property "build.filesystem=littlefs" \
@@ -178,6 +179,7 @@ $(S2_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(PROJECT_DIR)/partitions.csv Make
 	cp "$(PROJECT_DIR)/partitions.csv" "$(S2_SKETCH_DIR)/"
 	$(ARDUINO_CLI) compile \
 	    --fqbn "$(S2_FQBN)" \
+	    --build-property "compiler.cpp.extra_flags=-DLED_PIN=17" \
 	    --output-dir "$(S2_BUILD_DIR)" \
 	    --build-property "build.partitions=partitions" \
 	    --build-property "build.filesystem=littlefs" \
@@ -206,6 +208,7 @@ $(PICO_8M_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(PROJECT_DIR)/partitions-8m.
 	cp "$(PROJECT_DIR)/partitions-8m.csv" "$(PICO_8M_SKETCH_DIR)/partitions.csv"
 	$(ARDUINO_CLI) compile \
 	    --fqbn "$(PICO_8M_FQBN)" \
+	    --build-property "compiler.cpp.extra_flags=-DLED_PIN=10" \
 	    --output-dir "$(PICO_8M_OUTPUT_DIR)" \
 	    --build-property "build.partitions=partitions" \
 	    --build-property "build.filesystem=littlefs" \
