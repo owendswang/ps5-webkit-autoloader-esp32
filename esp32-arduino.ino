@@ -4,6 +4,7 @@
 #include <WebServer.h>
 #include <LittleFS.h>
 #include "esp_wifi.h"
+#include "esp_random.h"
 #include "esp_arduino_version.h"
 #include "esp_idf_version.h"
 
@@ -144,6 +145,44 @@ static String normalizePath(const char *uri)
 static bool isRegularFile(File &file)
 {
     return file && !file.isDirectory();
+}
+
+static void httpManifestHandler(const String &path)
+{
+    File file = LittleFS.open(path, "r");
+    if (!isRegularFile(file))
+    {
+        webServer.send(404, "text/plain", "404 Not Found");
+        return;
+    }
+
+    // Keep the CACHE MANIFEST signature first; change only version comments.
+    String manifest = file.readStringUntil('\n');
+    manifest += '\n';
+
+    char version[17];
+    snprintf(version, sizeof(version), "%08lx%08lx",
+             (unsigned long)esp_random(), (unsigned long)esp_random());
+    manifest += "# VERSION ";
+    manifest += version;
+    manifest += '\n';
+
+    while (file.available())
+    {
+        String line = file.readStringUntil('\n');
+        String comment = line;
+        comment.trim();
+        if (comment == "# VERSION" || comment.startsWith("# VERSION ") ||
+            comment.startsWith("# VERSION\t"))
+            continue;
+        manifest += line;
+        manifest += '\n';
+    }
+    file.close();
+
+    Serial.printf("[HTTP MANIFEST] %s version=%s\n", path.c_str(), version);
+    setHttpNoCacheHeaders();
+    webServer.send(200, "text/cache-manifest; charset=utf-8", manifest);
 }
 
 static String buildPs4UpdateXml(const String &region)
@@ -287,6 +326,13 @@ void httpFileHandler()
             if (LittleFS.exists(indexPath))
                 path = indexPath;
         }
+    }
+
+    if (getMimeType(path) == "text/cache-manifest")
+    {
+        httpManifestHandler(path);
+        logHeap("HTTP manifest end");
+        return;
     }
 
     bool gzip = false;

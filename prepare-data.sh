@@ -98,6 +98,7 @@ if [ "$MODE" = minimize ]; then
     \) -print0)
 else
     echo "Compressing minimized files for LittleFS..."
+    # Manifests stay plain so ESP32 can generate a version for each response.
     while IFS= read -r -d '' file; do
         gzip -9 -n "$file"
     done < <(find "$OUTPUT_DIR" -type f \( \
@@ -106,9 +107,6 @@ else
         -name '*.mjs' -o \
         -name '*.elf' -o \
         -name '*.bin' -o \
-        -name 'cache.appcache' -o \
-        -name '*.cache' -o \
-        -name '*.manifest' -o \
         -name '*.svg' -o \
         -name '*.css' -o \
         -name 'version' -o \

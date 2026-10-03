@@ -36,15 +36,21 @@ Build all ESP32 targets:
 make
 ```
 
-The default ESP32-S2/S3/C3 firmware leaves native USB disconnected, so the
-board only draws power from its USB connection. Build the separate debug
-variant to enable USB CDC/Serial-JTAG output:
+The default ESP32-S2/S3/C3 firmware leaves native USB disconnected, so the board only draws power from its USB connection. Build the separate debug variant to enable USB CDC/Serial-JTAG output:
 
 ```sh
 make debug
 ```
 
 Debug firmware is written to `build/debug/`.
+
+Build only the ESP32-S2 debug firmware with USB CDC output:
+
+```sh
+make debug-s2
+```
+
+The merged image is written to `build/debug/s2/esp32-arduino.s2.merged.bin`.
 
 Build an individual target:
 
@@ -57,6 +63,12 @@ make c3
 ```
 
 Generated firmware is written to `build/`.
+
+## Manifest updates
+
+ESP32 serves each AppCache manifest with a fresh random `# VERSION` comment and HTTP no-cache headers. The resource list is preserved; LittleFS manifests remain uncompressed so the server can edit the response without writing flash. Rebuild and flash both the firmware and LittleFS image when applying this change (the merged images include both).
+
+This requests an update on each online manifest check. Browsers that fetch the manifest again before committing an update can reject the changing version; verify caching on the target PS4 firmware. Offline visits keep using the existing cache, and an already open page may keep using its old cache until navigation.
 
 ## License
 

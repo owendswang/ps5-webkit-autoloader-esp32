@@ -98,7 +98,7 @@ ESP8266_FLASH_SIZE := 4194304
 ESP8266_LITTLEFS_SIZE := 0x2FA000
 ESP8266_LITTLEFS_OFFSET := 0x100000
 
-.PHONY: all debug pico pico-8m s2 s3 c3 8266 littlefs datadir minimize check check-minimize check-data check-littlefs check-8266 clean FORCE
+.PHONY: all debug debug-s2 pico pico-8m s2 s3 c3 8266 littlefs datadir minimize check check-minimize check-data check-littlefs check-8266 clean FORCE
 
 all: check $(PICO_MERGED) $(S2_MERGED) $(S3_MERGED) $(C3_MERGED)
 	@echo
@@ -107,6 +107,9 @@ all: check $(PICO_MERGED) $(S2_MERGED) $(S3_MERGED) $(C3_MERGED)
 
 debug:
 	@$(MAKE) USB_DEBUG=1 BUILD_DIR="$(PROJECT_DIR)/build/debug" all
+
+debug-s2:
+	@$(MAKE) USB_DEBUG=1 BUILD_DIR="$(PROJECT_DIR)/build/debug" s2
 
 pico: check $(PICO_MERGED)
 	@ls -lh "$(PICO_MERGED)"
