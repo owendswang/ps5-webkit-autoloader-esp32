@@ -4,6 +4,7 @@
 #include <WebServer.h>
 #include <LittleFS.h>
 #include "esp_wifi.h"
+#include "esp_random.h"
 #include "esp_https_server.h"
 #include "esp_arduino_version.h"
 #include "esp_idf_version.h"
@@ -276,6 +277,35 @@ static bool isRegularFile(File &file)
     return file && !file.isDirectory();
 }
 
+static String buildDynamicManifest(File &file)
+{
+    // The signature must remain first; only version comments are replaced.
+    String manifest = file.readStringUntil('\n');
+    manifest += '\n';
+
+    char version[17];
+    snprintf(version, sizeof(version), "%08lx%08lx",
+             (unsigned long)esp_random(), (unsigned long)esp_random());
+    manifest += "# VERSION ";
+    manifest += version;
+    manifest += '\n';
+
+    while (file.available())
+    {
+        String line = file.readStringUntil('\n');
+        String comment = line;
+        comment.trim();
+        if (comment == "# VERSION" || comment.startsWith("# VERSION ") ||
+            comment.startsWith("# VERSION\t"))
+            continue;
+        manifest += line;
+        manifest += '\n';
+    }
+
+    Serial.printf("[MANIFEST] %s version=%s\n", file.name(), version);
+    return manifest;
+}
+
 esp_err_t httpsFileHandler(httpd_req_t *req)
 {
     logHeap("HTTPS file begin");
@@ -332,7 +362,9 @@ esp_err_t httpsFileHandler(httpd_req_t *req)
 
     bool gzip = false;
     String gzPath = path + ".gz";
-    File gzFile = LittleFS.open(gzPath, "r");
+    File gzFile;
+    if (getMimeType(path) != "text/cache-manifest")
+        gzFile = LittleFS.open(gzPath, "r");
 
     if (isRegularFile(gzFile)) {
         if (file)
@@ -380,6 +412,17 @@ esp_err_t httpsFileHandler(httpd_req_t *req)
         httpd_resp_send(req, nullptr, 0);
 */
         return ESP_OK;
+    }
+
+    if (getMimeType(path) == "text/cache-manifest")
+    {
+        String manifest = buildDynamicManifest(file);
+        file.close();
+        setHttpsNoCacheHeaders(req);
+        httpd_resp_set_type(req, "text/cache-manifest; charset=utf-8");
+        esp_err_t result = httpd_resp_send(req, manifest.c_str(), manifest.length());
+        logHeap("HTTPS manifest end");
+        return result;
     }
 
     if (gzip) {
@@ -736,7 +779,9 @@ void httpFileHandler()
 
     String gzPath = path + ".gz";
 
-    File file = LittleFS.open(gzPath, "r");
+    File file;
+    if (getMimeType(path) != "text/cache-manifest")
+        file = LittleFS.open(gzPath, "r");
 
     if (file && !file.isDirectory()) {
         gzip = true;
@@ -774,6 +819,16 @@ void httpFileHandler()
     }
 
     String contentType = getMimeType(path);
+
+    if (contentType == "text/cache-manifest")
+    {
+        String manifest = buildDynamicManifest(file);
+        file.close();
+        setHttpNoCacheHeaders();
+        webServer.send(200, "text/cache-manifest; charset=utf-8", manifest);
+        logHeap("HTTP manifest end");
+        return;
+    }
 
     if (gzip && contentType == "application/octet-stream")
         webServer.sendHeader("Content-Encoding", "gzip");

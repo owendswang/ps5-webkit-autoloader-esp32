@@ -63,6 +63,18 @@ The build copies `autoloader/` to a temporary `data/` directory, compresses the 
 
 Use `make pico`, `make s2`, `make s3`, `make c3`~~, `make 8266`~~, or `make clean` to build an individual target or clean generated files. ~~The ESP-12F target uses the Generic ESP8266 4 MB / 3 MB LittleFS layout and produces `build/8266/esp8266-arduino.esp12f.merged.bin`.~~
 
+## Manifest updates
+
+ESP32 serves `.appcache`, `.manifest`, and `.cache` files over HTTP and HTTPS
+with a fresh random 16-digit hexadecimal `# VERSION` comment on each request
+and HTTP no-cache headers. Resource lists are preserved; the generated version
+is not written to flash. Manifests remain uncompressed in LittleFS.
+
+Rebuild and flash the merged image so both firmware and LittleFS are updated.
+This triggers online AppCache update checks; offline visits keep the existing
+cache. Browsers that re-fetch the manifest before committing an update may
+reject the changing version, so verify behavior on the target console firmware.
+
 ## Credits
 
 - [itsPLK/ps5-webkit-autoloader](https://github.com/itsPLK/ps5-webkit-autoloader)
