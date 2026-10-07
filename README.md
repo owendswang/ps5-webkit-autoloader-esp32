@@ -66,14 +66,16 @@ Use `make pico`, `make s2`, `make s3`, `make c3`~~, `make 8266`~~, or `make clea
 ## Manifest updates
 
 ESP32 serves `.appcache`, `.manifest`, and `.cache` files over HTTP and HTTPS
-with a fresh random 16-digit hexadecimal `# VERSION` comment on each request
+with a random 16-digit hexadecimal `# VERSION` comment generated once per boot
 and HTTP no-cache headers. Resource lists are preserved; the generated version
 is not written to flash. Manifests remain uncompressed in LittleFS.
 
 Rebuild and flash the merged image so both firmware and LittleFS are updated.
-This triggers online AppCache update checks; offline visits keep the existing
-cache. Browsers that re-fetch the manifest before committing an update may
-reject the changing version, so verify behavior on the target console firmware.
+The version stays the same across HTTP and HTTPS requests until ESP32 restarts,
+so a browser's final manifest consistency check receives identical content.
+After a restart, the new version triggers an update on the next online cache
+check. Repeated visits during the same boot do not force another update;
+offline visits keep the existing cache.
 
 ## Credits
 
