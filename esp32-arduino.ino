@@ -40,6 +40,9 @@ WebServer webServer(80);
 static const char *NO_CACHE_VALUE =
     "no-store, no-cache, must-revalidate, max-age=0";
 
+// Initialized before the server starts; stable for the entire boot.
+static char manifestVersion[17];
+
 #ifdef LED_PIN
 static void ledActivity()
 {
@@ -160,11 +163,8 @@ static void httpManifestHandler(const String &path)
     String manifest = file.readStringUntil('\n');
     manifest += '\n';
 
-    char version[17];
-    snprintf(version, sizeof(version), "%08lx%08lx",
-             (unsigned long)esp_random(), (unsigned long)esp_random());
     manifest += "# VERSION ";
-    manifest += version;
+    manifest += manifestVersion;
     manifest += '\n';
 
     while (file.available())
@@ -180,7 +180,7 @@ static void httpManifestHandler(const String &path)
     }
     file.close();
 
-    Serial.printf("[HTTP MANIFEST] %s version=%s\n", path.c_str(), version);
+    Serial.printf("[HTTP MANIFEST] %s version=%s\n", path.c_str(), manifestVersion);
     setHttpNoCacheHeaders();
     webServer.send(200, "text/cache-manifest; charset=utf-8", manifest);
 }
@@ -562,6 +562,10 @@ void setup()
         "DNS: %s\n",
         dnsResult ? "OK" : "FAILED"
     );
+
+    snprintf(manifestVersion, sizeof(manifestVersion), "%08lx%08lx",
+             (unsigned long)esp_random(), (unsigned long)esp_random());
+    Serial.printf("[MANIFEST] boot version=%s\n", manifestVersion);
 
     Serial.println("Starting WebServer");
 

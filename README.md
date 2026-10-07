@@ -66,9 +66,9 @@ Generated firmware is written to `build/`.
 
 ## Manifest updates
 
-ESP32 serves each AppCache manifest with a fresh random `# VERSION` comment and HTTP no-cache headers. The resource list is preserved; LittleFS manifests remain uncompressed so the server can edit the response without writing flash. Rebuild and flash both the firmware and LittleFS image when applying this change (the merged images include both).
+ESP32 serves each AppCache manifest with a random 16-digit hexadecimal `# VERSION` comment generated once per boot and HTTP no-cache headers. The version stays the same until ESP32 restarts, so a browser's final manifest consistency check receives identical content. The resource list is preserved; LittleFS manifests remain uncompressed so the server can edit the response without writing flash. Rebuild and flash both the firmware and LittleFS image when applying this change (the merged images include both).
 
-This requests an update on each online manifest check. Browsers that fetch the manifest again before committing an update can reject the changing version; verify caching on the target PS4 firmware. Offline visits keep using the existing cache, and an already open page may keep using its old cache until navigation.
+After ESP32 restarts, the new version triggers an update on the next online cache check. Repeated visits during the same boot do not force another update. Offline visits keep using the existing cache, and an already open page may keep using its old cache until navigation.
 
 ## License
 
