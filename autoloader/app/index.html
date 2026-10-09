@@ -1,152 +1,45 @@
 <!doctype html>
 <html lang="en">
-
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WebKit Autoloader</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      -webkit-box-sizing: border-box;
-      box-sizing: border-box;
-    }
-
-    html,
-    body {
-      height: 100%;
-    }
-
-    body {
-      font-family: -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
-      background: #0f172a;
-      background: -webkit-linear-gradient(180deg, #0f172a 0%, #0b1220 100%);
-      color: #e2e8f0;
-      display: -webkit-box;
-      display: -webkit-flex;
-      display: flex;
-      -webkit-box-align: center;
-      -webkit-align-items: center;
-      align-items: center;
-      -webkit-box-pack: center;
-      -webkit-justify-content: center;
-      justify-content: center;
-      min-height: 100%;
-      text-align: center;
-    }
-
-    p {
-      font-size: 1.375rem;
-      line-height: 1.5;
-      color: #94a3b8;
-    }
-
-    p.bad {
-      color: #f87171;
-    }
-  </style>
-</head>
-
-<body>
-  <main>
-    <p id="status">Loading&hellip;</p>
-  </main>
-
-  <script>
-    (function () {
-      'use strict';
-
-      function detectFirmware() {
-        var m = /PlayStation 5\/(\d+\.\d+)/.exec(navigator.userAgent);
-        if (!m) return null;
-        return { str: m[1], num: parseFloat(m[1]) };
-      }
-
-      /* Firmware support definitions:
-         - <= 5.50: umtx2
-         - 7.00 - 12.00: poops
-         - 7.00 - 13.60 (except 9.05, 11.40): relapse */
-      function isUmtx2Supported(num) {
-        var n = typeof num === 'number' ? num : parseFloat(num);
-        return n > 0 && n <= 5.50;
-      }
-
-      function isPoopsSupported(num) {
-        var n = typeof num === 'number' ? num : parseFloat(num);
-        return n >= 7.00 && n <= 12.00;
-      }
-
-      function isRelapseSupported(num, str) {
-        var n = typeof num === 'number' ? num : parseFloat(num);
-        var s = str || (typeof num === 'string' ? num : '');
-        var isExcluded = (s === '9.05' || s === '11.40' ||
-                          Math.abs(n - 9.05) < 0.001 || Math.abs(n - 11.40) < 0.001);
-        return n >= 7.00 && n <= 13.60 && !isExcluded;
-      }
-
-      var dir = '0.5.2';
-      var version = '0.5.2';
-      var statusEl = document.getElementById('status');
-      var params = new URLSearchParams(window.location.search);
-      var mode = params.get('force');
-
-      if (mode !== 'umtx2' && mode !== 'poops' && mode !== 'relapse') {
-        var fw = detectFirmware();
-        var fwStr = fw ? fw.str : '';
-        var fwNum = fw ? fw.num : 0;
-        var hasUmtx2 = isUmtx2Supported(fwNum);
-        var hasPoops = isPoopsSupported(fwNum);
-        var hasRelapse = isRelapseSupported(fwNum, fwStr);
-        if (hasUmtx2) {
-          mode = 'umtx2';
-        } else if (hasPoops && !hasRelapse) {
-          mode = 'poops';
-        } else if (hasPoops && hasRelapse) {
-          try {
-            mode = localStorage.getItem('wkal_exploit');
-          } catch (e) { }
-          if (mode !== 'poops' && mode !== 'relapse') mode = 'poops';
-        } else if (hasRelapse) {
-          mode = 'relapse';
-        } else if (!fw) {
-          try {
-            mode = localStorage.getItem('wkal_exploit');
-          } catch (e) { }
-          if (mode !== 'poops' && mode !== 'relapse') mode = 'relapse';
-        } else {
-          statusEl.textContent = 'Unsupported firmware.';
-          statusEl.className = 'bad';
-          return;
-        }
-        window.location.replace('/app/index.html?force=' + mode);
-        return;
-      }
-
-      function fail() {
-        statusEl.textContent = 'Cache incomplete - run the installer again.';
-        statusEl.className = 'bad';
-      }
-
-      /* __complete__ is the LAST entry of the AppCache manifest, so if it is
-         present (with our version content) every file before it was downloaded.
-         Only then point at the app. If the marker is missing, this fetch falls
-         fail offline, and a content mismatch also prevents redirecting into
-         a partially cached directory. */
-      fetch('/app/' + dir + '/__complete__')
-        .then(function (r) {
-          return r.text();
-        })
-        .then(function (t) {
-          if (t.trim() === version) {
-            window.location.replace('/app/' + dir + '/index.html?force=' + mode);
-          } else {
-            fail();
-          }
-        })
-        .catch(fail);
-    })();
-  </script>
+<meta charset="utf-8">
+<title>WebKit Autoloader v0.6.1 by PLK (built 2026-10-08 16:05:56 UTC)</title>
+<body style="background:#111;color:#eee;font:24px sans-serif;margin:10%">
+<p id="status">Loading...</p>
+<script>
+(function () {
+  // A method-specific URL selects its cache before fetching any resources. The choice
+  // was recorded by the installer on this same origin, so it is readable here
+  // with no server running.
+  var version = '0.6.1';
+  var base = '/app/0.6.1/';
+  var forced = new URLSearchParams(location.search).get('force');
+  var chain = forced;
+  if (chain !== 'poops' && chain !== 'relapse') {
+    try { chain = window.localStorage.getItem('wkal_exploit'); } catch (error) { chain = null; }
+  }
+  var match = /PlayStation 5\/(\d+\.\d+)/.exec(navigator.userAgent);
+  var fw = match ? parseFloat(match[1]) : 0;
+  var hasPoops = fw >= 7 && fw <= 12;
+  var hasRelapse = fw >= 7 && fw <= 13.60 && fw !== 9.05 && fw !== 11.40;
+  if (match && !hasPoops && !hasRelapse) {
+    document.getElementById('status').textContent = 'Unsupported firmware ' + match[1];
+    return;
+  }
+  if (match && chain === 'poops' && !hasPoops) chain = null;
+  if (match && chain === 'relapse' && !hasRelapse) chain = null;
+  if (chain !== 'poops' && chain !== 'relapse') {
+    chain = hasPoops ? 'poops' : 'relapse';
+  }
+  if (forced !== chain) {
+    location.replace('/app/index.html?force=' + chain);
+    return;
+  }
+  fetch(base + '__complete__').then(function (r) { return r.text(); }).then(function (marker) {
+    if (marker.trim() !== version) throw new Error('Cache incomplete');
+    location.replace(base + chain + '.html');
+  }).catch(function () {
+    document.getElementById('status').textContent = 'Cache incomplete. Run the installer again.';
+  });
+})();
+</script>
 </body>
-
 </html>

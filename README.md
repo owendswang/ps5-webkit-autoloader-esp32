@@ -63,6 +63,24 @@ The build copies `autoloader/` to a temporary `data/` directory, compresses the 
 
 Use `make pico`, `make s2`, `make s3`, `make c3`~~, `make 8266`~~, or `make clean` to build an individual target or clean generated files. ~~The ESP-12F target uses the Generic ESP8266 4 MB / 3 MB LittleFS layout and produces `build/8266/esp8266-arduino.esp12f.merged.bin`.~~
 
+## Extract embedded autoloader binaries
+
+After adapting upstream HTML for the ESP32 split caches, run:
+
+```sh
+python3 externalize_autoloader.py
+```
+
+The script detects the version under `autoloader/app/`, extracts the shared
+`shared/elfldr-ps5.elf`, `shared/kexp-ps5.bin`, and `payloads/autoloader.elf`,
+switches both pages to ordinary same-origin fetches, and adds the resources to
+both manifests before `__complete__`. It verifies sizes, SHA-256 hashes, and
+agreement between the pages before writing. Repeated runs verify the files
+without changing them. An alternative web directory can be passed as an argument.
+
+Original files are backed up outside the web directory, under
+`autoloader-externalize-backup/<version>/`, so backups are not included in LittleFS.
+
 ## Manifest updates
 
 ESP32 serves `.appcache`, `.manifest`, and `.cache` files over HTTP and HTTPS

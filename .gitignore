@@ -12,3 +12,4 @@ __pycache__/
 /autoloader-*
 /*.mini/
 /henloader/
+replace_autoloader_elf.py
