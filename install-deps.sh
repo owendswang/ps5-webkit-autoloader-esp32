@@ -27,6 +27,7 @@ $SUDO apt-get install -y \
     npm \
     openssl \
     python3 \
+    python3-serial \
     unzip \
     xz-utils
 
@@ -39,6 +40,8 @@ $SUDO npm install --global \
 if ! command -v arduino-cli >/dev/null 2>&1; then
     TMP_DIR="$(mktemp -d)"
     trap 'rm -rf "$TMP_DIR"' EXIT
+
+    mkdir -p "$TMP_DIR/bin"
 
     curl -fsSL \
         https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh \

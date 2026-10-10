@@ -1,6 +1,10 @@
 # ESP32 PS5 WebKit Autoloader
 
-A compact HTTP/HTTPS host for the PS5 WebKit Autoloader, packaged as 4 MB flash images for ESP32-PICO, ESP32-S2, ESP32-S3 and ESP32-C3 boards. All targets use LittleFS and do not require PSRAM.
+A compact HTTP/HTTPS host for the PS5 WebKit Autoloader, packaged as 4 MB flash images for ESP32-PICO, ESP32-S2, ESP32-S3 and ESP32-C3 boards. This project includes a dedicated image for the **AZ-Delivery ESP32 D1 Mini with an ESP32-WROOM-32 module**. All targets use LittleFS and do not require PSRAM.
+
+The AZ-Delivery D1 Mini port was contributed and hardware-tested by [JavaScript-X](https://github.com/JavaScript-X).
+
+**Confirmed working:** the release image has been flashed successfully to an AZ-Delivery ESP32 D1 Mini with an ESP32-WROOM-32 module (ESP32-D0WD-V3 revision 3.1). The board boots, creates the `ESP32_PORTAL` Wi-Fi network, and serves the autoloader interface at `http://192.168.4.1/`.
 
 The web content in `autoloader/` is based on a modified version of the [`ps5-webkit-autoloader`](https://github.com/itsPLK/ps5-webkit-autoloader) frontend. Its bundled [`slopkit`](https://github.com/itsPLK/slopkit), [`umtx2`](https://github.com/idlesauce/umtx2) and [`ps5-unified-autoloader`](https://github.com/owendswang/ps5-unified-autoloader/tree/feat/install-webkit-shortcut) components also contain project-specific modifications and therefore do not exactly match upstream.
 
@@ -44,6 +48,12 @@ Install the Arduino CLI and required core:
 make
 ```
 
+To build only the AZ-Delivery ESP32 D1 Mini image:
+
+```sh
+make d1-mini
+```
+
 The default ESP32-S2/S3/C3/PICO firmware leaves native USB disconnected, so the board only draws power from its USB connection. Build the separate debug variant to enable USB CDC/Serial-JTAG output:
 
 ```sh
@@ -56,12 +66,24 @@ DNS resolves `manuals.playstation.net`, `ena.net.playstation.net` and `www.msftc
 
 The build copies `autoloader/` to a temporary `data/` directory, compresses the web assets, and creates:
 
+- `build/d1-mini/ps5-webkit-autoloader.az-delivery-d1-mini-esp32.merged.bin`: AZ-Delivery D1 Mini / ESP32-WROOM-32 with 4 MB flash.
 - `build/pico/esp32-arduino.pico.merged.bin`: Intended to support generic ESP32-PICO series boards.
 - `build/s2/esp32-arduino.s2.merged.bin`: Intended to support ESP32-S2 series boards.
 - `build/s3/esp32-arduino.s3.merged.bin`: Intended to support ESP32-S3 series boards.
 - `build/c3/esp32-arduino.c3.merged.bin`: Intended to support ESP32-C3 series boards.
 
-Use `make pico`, `make s2`, `make s3`, `make c3`~~, `make 8266`~~, or `make clean` to build an individual target or clean generated files. ~~The ESP-12F target uses the Generic ESP8266 4 MB / 3 MB LittleFS layout and produces `build/8266/esp8266-arduino.esp12f.merged.bin`.~~
+Use `make d1-mini`, `make pico`, `make s2`, `make s3`, `make c3`~~, `make 8266`~~, or `make clean` to build an individual target or clean generated files. ~~The ESP-12F target uses the Generic ESP8266 4 MB / 3 MB LittleFS layout and produces `build/8266/esp8266-arduino.esp12f.merged.bin`.~~
+
+## Flash the AZ-Delivery ESP32 D1 Mini
+
+Build the merged D1 Mini image with `make d1-mini`, connect the board by USB, and replace `COM4` with its serial port:
+
+```sh
+python -m esptool --chip esp32 --port COM4 --baud 460800 erase-flash
+python -m esptool --chip esp32 --port COM4 --baud 460800 write-flash 0x0 build/d1-mini/ps5-webkit-autoloader.az-delivery-d1-mini-esp32.merged.bin
+```
+
+The image is built for the original ESP32 chip, 4 MB flash, DIO mode at 40 MHz, and no PSRAM. If automatic reset does not enter download mode, hold **BOOT**, tap **RESET**, start flashing, and then release **BOOT**. This configuration has been tested successfully on the AZ-Delivery ESP32 D1 Mini described above.
 
 ## Extract embedded autoloader binaries
 
@@ -97,6 +119,7 @@ offline visits keep the existing cache.
 
 ## Credits
 
+- [JavaScript-X](https://github.com/JavaScript-X) — AZ-Delivery ESP32 D1 Mini / ESP32-WROOM-32 port and hardware validation
 - [itsPLK/ps5-webkit-autoloader](https://github.com/itsPLK/ps5-webkit-autoloader)
 - [itsPLK/ps5-unified-autoloader](https://github.com/itsPLK/ps5-unified-autoloader)
 - [jordyidk/slopkit](https://github.com/jordyidk/slopkit)

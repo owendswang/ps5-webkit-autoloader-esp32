@@ -16,12 +16,14 @@ SERVER_HEADER := $(PROJECT_DIR)/server_certs.h
 CERT_EMBEDDER := $(PROJECT_DIR)/embed_cert.py
 DATA_PREPARER := $(PROJECT_DIR)/prepare-data.sh
 COMMON_BUILD_DIR := $(BUILD_DIR)/common
+D1_MINI_BUILD_DIR := $(BUILD_DIR)/d1-mini
 PICO_BUILD_DIR := $(BUILD_DIR)/pico
 S2_BUILD_DIR := $(BUILD_DIR)/s2
 S3_BUILD_DIR := $(BUILD_DIR)/s3
 C3_BUILD_DIR := $(BUILD_DIR)/c3
 ESP8266_BUILD_DIR := $(BUILD_DIR)/8266
 ESP8266_SKETCH_DIR := $(ESP8266_BUILD_DIR)/sketch/esp8266-arduino
+D1_MINI_SKETCH_DIR := $(D1_MINI_BUILD_DIR)/sketch/$(PROJECT_NAME)
 PICO_SKETCH_DIR := $(PICO_BUILD_DIR)/sketch/$(PROJECT_NAME)
 S2_SKETCH_DIR := $(S2_BUILD_DIR)/sketch/$(PROJECT_NAME)
 S3_SKETCH_DIR := $(S3_BUILD_DIR)/sketch/$(PROJECT_NAME)
@@ -66,6 +68,7 @@ ifeq ($(USB_DEBUG),1)
 S2_TLS_DEBUG_LINK := --build-property "compiler.c.elf.extra_flags=-Wl,--wrap=esp_tls_server_session_create"
 endif
 PICO_FQBN := esp32:esp32:esp32:CPUFreq=240,FlashFreq=40,FlashMode=dio,FlashSize=4M,DebugLevel=$(DEBUG_LEVEL),PSRAM=disabled
+D1_MINI_FQBN := esp32:esp32:esp32:CPUFreq=240,FlashFreq=40,FlashMode=dio,FlashSize=4M,DebugLevel=$(DEBUG_LEVEL),PSRAM=disabled
 S2_FQBN := esp32:esp32:esp32s2:$(S2_USB_OPTIONS),MSCOnBoot=default,DFUOnBoot=default,UploadMode=default,CPUFreq=240,FlashFreq=40,FlashMode=dio,FlashSize=4M,DebugLevel=$(DEBUG_LEVEL),PSRAM=disabled
 S3_FQBN := esp32:esp32:esp32s3:$(S3_USB_OPTIONS),MSCOnBoot=default,DFUOnBoot=default,UploadMode=default,CPUFreq=240,FlashMode=dio,FlashSize=4M,DebugLevel=$(DEBUG_LEVEL),PSRAM=disabled
 PICO_8M_FQBN := esp32:esp32:esp32:CPUFreq=240,FlashFreq=40,FlashMode=dio,FlashSize=8M,DebugLevel=$(DEBUG_LEVEL),PSRAM=disabled
@@ -82,6 +85,10 @@ PICO_8M_LITTLEFS_SIZE := 0x660000
 PICO_8M_LITTLEFS_OFFSET := 0x190000
 
 LITTLEFS_IMAGE := $(COMMON_BUILD_DIR)/$(PROJECT_NAME).littlefs.bin
+D1_MINI_APP := $(D1_MINI_BUILD_DIR)/$(PROJECT_NAME).ino.bin
+D1_MINI_BOOTLOADER := $(D1_MINI_BUILD_DIR)/$(PROJECT_NAME).ino.bootloader.bin
+D1_MINI_PARTITIONS := $(D1_MINI_BUILD_DIR)/$(PROJECT_NAME).ino.partitions.bin
+D1_MINI_MERGED := $(D1_MINI_BUILD_DIR)/ps5-webkit-autoloader.az-delivery-d1-mini-esp32.merged.bin
 PICO_APP := $(PICO_BUILD_DIR)/$(PROJECT_NAME).ino.bin
 PICO_BOOTLOADER := $(PICO_BUILD_DIR)/$(PROJECT_NAME).ino.bootloader.bin
 PICO_PARTITIONS := $(PICO_BUILD_DIR)/$(PROJECT_NAME).ino.partitions.bin
@@ -110,7 +117,7 @@ ESP8266_FLASH_SIZE := 4194304
 ESP8266_LITTLEFS_SIZE := 0x2FA000
 ESP8266_LITTLEFS_OFFSET := 0x100000
 
-.PHONY: all debug debug-s2 pico pico-8m s2 s3 c3 8266 littlefs datadir minimize check check-minimize check-data check-littlefs check-8266 clean FORCE
+.PHONY: all debug debug-s2 d1-mini pico pico-8m s2 s3 c3 8266 littlefs datadir minimize check check-minimize check-data check-littlefs check-8266 clean FORCE
 
 all: check $(PICO_MERGED) $(S2_MERGED) $(S3_MERGED) $(C3_MERGED)
 	@echo
@@ -122,6 +129,9 @@ debug:
 
 debug-s2:
 	@$(MAKE) USB_DEBUG=1 BUILD_DIR="$(PROJECT_DIR)/build/debug" s2
+
+d1-mini: check $(D1_MINI_MERGED)
+	@ls -lh "$(D1_MINI_MERGED)"
 
 pico: check $(PICO_MERGED)
 	@ls -lh "$(PICO_MERGED)"
@@ -235,6 +245,22 @@ $(PICO_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(SERVER_HEADER) $(PROJECT_DIR)/
 	    "$(PICO_SKETCH_DIR)"
 	size=$$(stat -c %s "$(PICO_APP)")
 	test "$$size" -le "$(APP_PARTITION_SIZE)" || { echo "Error: Pico application exceeds the 1 MB partition: $$size bytes" >&2; exit 1; }
+
+$(D1_MINI_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(SERVER_HEADER) $(PROJECT_DIR)/partitions.csv Makefile $(DNS_LIBRARY_STAMP)
+	@rm -rf "$(D1_MINI_SKETCH_DIR)"
+	mkdir -p "$(D1_MINI_SKETCH_DIR)"
+	cp "$(PROJECT_DIR)/$(PROJECT_NAME).ino" "$(SERVER_HEADER)" "$(D1_MINI_SKETCH_DIR)/"
+	cp "$(PROJECT_DIR)/partitions.csv" "$(D1_MINI_SKETCH_DIR)/"
+	$(ARDUINO_CLI) compile \
+	    $(DNS_LIBRARY_ARG) \
+	    --fqbn "$(D1_MINI_FQBN)" \
+	    --build-property "compiler.cpp.extra_flags=$(USB_DEBUG_FLAG)" \
+	    --output-dir "$(D1_MINI_BUILD_DIR)" \
+	    --build-property "build.partitions=partitions" \
+	    --build-property "build.filesystem=littlefs" \
+	    "$(D1_MINI_SKETCH_DIR)"
+	size=$$(stat -c %s "$(D1_MINI_APP)")
+	test "$$size" -le "$(APP_PARTITION_SIZE)" || { echo "Error: D1 Mini application exceeds the 1 MB partition: $$size bytes" >&2; exit 1; }
 
 $(S2_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(SERVER_HEADER) $(PROJECT_DIR)/partitions.csv Makefile $(DNS_LIBRARY_STAMP)
 	@rm -rf "$(S2_SKETCH_DIR)"
@@ -353,6 +379,26 @@ $(PICO_MERGED): $(PICO_APP) $(LITTLEFS_IMAGE)
 	    head -c "$$padding" /dev/zero | tr '\000' '\377' >> "$(PICO_MERGED)"
 	fi
 	test "$$(stat -c %s "$(PICO_MERGED)")" -eq "$(FLASH_SIZE)"
+
+$(D1_MINI_MERGED): $(D1_MINI_APP) $(LITTLEFS_IMAGE)
+	@python3 "$(ESPTOOL)" \
+	    --chip esp32 \
+	    merge_bin \
+	    -o "$(D1_MINI_MERGED)" \
+	    --flash_mode dio \
+	    --flash_freq 40m \
+	    --flash_size 4MB \
+	    0x1000 "$(D1_MINI_BOOTLOADER)" \
+	    0x8000 "$(D1_MINI_PARTITIONS)" \
+	    0x10000 "$(D1_MINI_APP)" \
+	    "$(LITTLEFS_OFFSET)" "$(LITTLEFS_IMAGE)"
+	size=$$(stat -c %s "$(D1_MINI_MERGED)")
+	test "$$size" -le "$(FLASH_SIZE)" || { echo "Error: D1 Mini image exceeds 4 MB: $$size bytes" >&2; exit 1; }
+	if [ "$$size" -lt "$(FLASH_SIZE)" ]; then
+	    padding=$$(($(FLASH_SIZE) - size))
+	    head -c "$$padding" /dev/zero | tr '\000' '\377' >> "$(D1_MINI_MERGED)"
+	fi
+	test "$$(stat -c %s "$(D1_MINI_MERGED)")" -eq "$(FLASH_SIZE)"
 
 $(S2_MERGED): $(S2_APP) $(LITTLEFS_IMAGE)
 	@python3 "$(ESPTOOL)" \
