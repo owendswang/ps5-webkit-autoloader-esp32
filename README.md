@@ -1,6 +1,6 @@
 # ESP32 PS4 Exploit Host
 
-Offline PS4 exploit host for ESP32 and ESP8266 boards. Web files are stored in LittleFS, minimized and served with gzip compression. No PSRAM is required.
+Offline PS4 exploit host for ESP32 boards. Web files are stored in LittleFS, minimized and served with gzip compression. No PSRAM is required.
 
 The web interface is based on [ps4-psx8-pulse](https://github.com/owendswang/ps4-psx8-pulse) and [raw-game](https://raw-game.com/zrm/).
 
