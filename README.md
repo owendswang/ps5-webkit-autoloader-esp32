@@ -7,17 +7,18 @@ The web content in `autoloader/` is based on a modified version of the [`ps5-web
 ## Firmware Version Supports
 
 - poops        7.00 - 12.00
-- relapse        7.00 - 13.60   (except 9.05 and 11.40)
+- relapse      7.00 - 13.60 (except 9.05 and 11.40)
 
 You could choose to use poops or relapse if your FW supports both methods while caching. It would use Poops by default if you don't choose.
 
 ## Usage
 
-1. Plug the ESP32 into the PS5 and turn on the console.
-2. Connect the PS5 to the `ESP32_PORTAL` Wi-Fi network using the password `12345678`.
-3. Open **Settings → Guide & Tips ... → Guide & Tips → User's Guide**.
-4. Wait for the installation and caching process to finish. Do not disconnect the ESP32 while it is still running.
-5. On success, Payload Manager opens automatically and a **WebKit Autoloader** shortcut appears in the **Media** section of the home screen.
+1. [Download](/releases) and Flash the appropriate firmware for your device model with [`Flash Download Tool`](https://docs.espressif.com/projects/esp-test-tools/en/latest/esp32/production_stage/tools/flash_download_tool.html) or [`Online ESP Tool`](https://espressif.github.io/esptool-js/).
+2. Plug the ESP32 into the USB port of PS5 or any other nearby. It only needs power supply and shouldn't be too far for Wi-Fi connection.
+3. Connect the PS5 to the `ESP32_PORTAL` Wi-Fi network using the password `12345678`.
+4. Open **Settings → Guide & Tips ... → Guide & Tips → User's Guide**.
+5. Wait for the installation and caching process to finish. Do not disconnect the ESP32 while it is still running.
+6. On success, Payload Manager opens automatically and a **WebKit Autoloader** shortcut appears in the **Media** section of the home screen.
 
 After a successful installation, the web content is cached on the PS5. On subsequent boots, launch **WebKit Autoloader** directly from the Media section.
 
