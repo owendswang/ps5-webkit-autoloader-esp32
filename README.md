@@ -2,7 +2,7 @@
 
 Offline PS4 exploit host for ESP32 boards. Web files are stored in LittleFS, minimized and served with gzip compression. No PSRAM is required.
 
-The web interface is based on [ps4-psx8-pulse](https://github.com/owendswang/ps4-psx8-pulse) and [raw-game](https://raw-game.com/zrm/).
+The web interface is based on [ps4-psx8-pulse](https://github.com/owendswang/ps4-psx8-pulse),  [rawgame4](https://rawgame4.github.io/) and [raw13g](https://raw13g.github.io).
 
 ## Supported Firmware Version
 
@@ -15,12 +15,13 @@ The web interface is based on [ps4-psx8-pulse](https://github.com/owendswang/ps4
 
 ## Usage
 
-1. Flash the merged image for your board.
+1. [Download](/releases) and Flash the appropriate firmware for your device model with [`Flash Download Tool`](https://docs.espressif.com/projects/esp-test-tools/en/latest/esp32/production_stage/tools/flash_download_tool.html) or [`Online ESP Tool`](https://espressif.github.io/esptool-js/).
+2. Plug the ESP32 into the USB port of PS4 or any other nearby. It only needs power supply and shouldn't be too far for Wi-Fi connection.
 2. Connect the PS4 to Wi-Fi:
    - SSID: `ESP32_PORTAL`
    - Password: `12345678`
-3. Open the PS4 browser or User's Guide and visit `http://192.168.4.1/`.
-4. Select the PS4 firmware version and wait for offline caching to complete.
+3. Open the PS4 browser and visit `http://192.168.4.1/`. Or open User's Guide, but the success rate might be lower.
+4. Select the PS4 firmware version and wait for offline caching to complete. Then the process would start automatically.
 
 ## Build
 
