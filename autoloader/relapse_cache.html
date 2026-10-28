@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WebKit Autoloader Installer v0.6.1 by PLK (built 2026-10-08 16:05:56 UTC)</title>
+  <title>WebKit Autoloader Installer v0.6.2 by PLK (built 2026-10-28 00:06:14 UTC)</title>
   <style>
     * {
       margin: 0;
@@ -324,7 +324,7 @@
 
   </main>
 
-  <footer id="footer">WebKit Autoloader Installer v0.6.1 by PLK (built 2026-10-08 16:05:56 UTC)<br />This project is free and open source: github.com/itsPLK/ps5-webkit-autoloader</footer>
+  <footer id="footer">WebKit Autoloader Installer v0.6.2 by PLK (built 2026-10-28 00:06:14 UTC)<br />This project is free and open source: github.com/itsPLK/ps5-webkit-autoloader</footer>
 
 <script>
 (function () {
@@ -334,7 +334,7 @@
   var installing = false;
   var failed = false;
   var downloading = false;
-  var version = '0.6.1';
+  var version = '0.6.2';
   var progress = document.getElementById('progress');
   var percent = document.getElementById('percent');
   var choice = document.getElementById('choice');
@@ -387,7 +387,7 @@
   var match = /PlayStation 5\/(\d+\.\d+)/.exec(navigator.userAgent);
   var fw = match ? parseFloat(match[1]) : 0;
   var hasPoops = fw >= 7 && fw <= 12;
-  var hasRelapse = fw >= 7 && fw <= 13.60 && fw !== 9.05 && fw !== 11.40;
+  var hasRelapse = fw >= 7 && fw <= 13.60 && fw !== 9.05;
 
   // Ignore stored choices that this known firmware cannot run.
   if (match) {
@@ -469,7 +469,7 @@
   if (unsupported) {
     status.textContent = 'Unsupported firmware ' + match[1];
     status.className = 'error';
-    detail.textContent = 'Supported: 7.00–12.00 via Poops, 7.00–13.60 via Relapse (except 9.05 and 11.40).';
+    detail.textContent = 'Supported: 7.00–12.00 via Poops, 7.00–13.60 via Relapse (except 9.05).';
     progress.hidden = true;
     percent.hidden = true;
     return;

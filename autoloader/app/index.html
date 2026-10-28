@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<title>WebKit Autoloader v0.6.1 by PLK (built 2026-10-08 16:05:56 UTC)</title>
+<title>WebKit Autoloader v0.6.2 by PLK (built 2026-10-28 00:06:14 UTC)</title>
 <body style="background:#111;color:#eee;font:24px sans-serif;margin:10%">
 <p id="status">Loading...</p>
 <script>
@@ -9,8 +9,8 @@
   // A method-specific URL selects its cache before fetching any resources. The choice
   // was recorded by the installer on this same origin, so it is readable here
   // with no server running.
-  var version = '0.6.1';
-  var base = '/app/0.6.1/';
+  var version = '0.6.2';
+  var base = '/app/0.6.2/';
   var forced = new URLSearchParams(location.search).get('force');
   var chain = forced;
   if (chain !== 'poops' && chain !== 'relapse') {
@@ -19,7 +19,7 @@
   var match = /PlayStation 5\/(\d+\.\d+)/.exec(navigator.userAgent);
   var fw = match ? parseFloat(match[1]) : 0;
   var hasPoops = fw >= 7 && fw <= 12;
-  var hasRelapse = fw >= 7 && fw <= 13.60 && fw !== 9.05 && fw !== 11.40;
+  var hasRelapse = fw >= 7 && fw <= 13.60 && fw !== 9.05;
   if (match && !hasPoops && !hasRelapse) {
     document.getElementById('status').textContent = 'Unsupported firmware ' + match[1];
     return;
