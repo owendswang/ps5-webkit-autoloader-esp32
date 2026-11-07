@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" manifest="/cache.appcache">
 
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WebKit Autoloader Installer v0.6.2 by PLK (built 2026-10-28 00:06:14 UTC)</title>
+  <title>WebKit Autoloader Installer v0.7.0 by PLK (built 2026-11-06 22:07:03 UTC)</title>
   <style>
     * {
       margin: 0;
@@ -48,8 +48,6 @@
       text-align: center;
       z-index: 20;
     }
-
-
 
     main {
       max-width: 42rem;
@@ -155,95 +153,6 @@
       color: #f00;
     }
 
-    #choice {
-      margin-top: 1.5rem;
-      width: 100%;
-      max-width: 38rem;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    #choice[hidden] {
-      display: none !important;
-    }
-
-    .choice-grid {
-      display: -webkit-box;
-      display: -webkit-flex;
-      display: flex;
-      gap: 1.25rem;
-      margin-top: 1rem;
-      text-align: left;
-    }
-
-    .choice-card {
-      -webkit-box-flex: 1;
-      -webkit-flex: 1;
-      flex: 1;
-      background: #1b2436;
-      border: 2px solid #2c3e5a;
-      border-radius: 12px;
-      padding: 1.5rem 1.25rem;
-      display: -webkit-box;
-      display: -webkit-flex;
-      display: flex;
-      -webkit-box-orient: vertical;
-      -webkit-box-direction: normal;
-      -webkit-flex-direction: column;
-      flex-direction: column;
-      cursor: pointer;
-      color: inherit;
-      font-family: inherit;
-      -webkit-transition: border-color 0.2s, -webkit-transform 0.2s, background-color 0.2s;
-      transition: border-color 0.2s, transform 0.2s, background-color 0.2s;
-      outline: none;
-    }
-
-    .choice-card.selected {
-      border-color: rgba(56, 189, 248, 0.4);
-      background-color: rgba(56, 189, 248, 0.05);
-    }
-
-    .choice-card:hover,
-    .choice-card:focus {
-      border-color: #38bdf8;
-      background-color: #22304a;
-      -webkit-transform: translateY(-2px);
-      transform: translateY(-2px);
-      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.4);
-    }
-
-    .choice-card:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      pointer-events: none;
-    }
-
-    .choice-card .choice-title {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #38bdf8;
-      margin-bottom: 0.25rem;
-    }
-
-    .choice-card .choice-fw {
-      display: inline-block;
-      align-self: flex-start;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: #7dd3fc;
-      background: rgba(56, 189, 248, 0.12);
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      border-radius: 4px;
-      padding: 0.15rem 0.5rem;
-      margin-bottom: 0.75rem;
-    }
-
-    .choice-card .choice-desc {
-      font-size: 0.95rem;
-      color: #cbd5e1;
-      line-height: 1.5;
-    }
     [hidden] {
       display: none !important;
     }
@@ -280,7 +189,6 @@
     @media (max-width: 560px) {
       body { height: auto; display: block; }
       main { padding: 2rem 1rem; }
-      .choice-grid { -webkit-flex-direction: column; flex-direction: column; }
       h1 { font-size: 2rem; }
       #footer {
         position: static;
@@ -301,21 +209,6 @@
     <p id="status">Caching content...</p>
     <p id="detail">Please wait a moment. Do not close this page yet!</p>
 
-    <div id="choice" hidden>
-      <div class="choice-grid">
-        <button type="button" class="choice-card" id="poops">
-          <div class="choice-title">Poops</div>
-          <div class="choice-fw">FW 7.00 &ndash; 12.00</div>
-          <div class="choice-desc">Works completely offline. Does not require any network connection or active network interface.</div>
-        </button>
-        <button type="button" class="choice-card" id="relapse">
-          <div class="choice-title">Relapse</div>
-          <div class="choice-fw">FW 7.00 &ndash; 13.60</div>
-          <div class="choice-desc">Requires an active network interface (Wi-Fi or Ethernet). Internet access is not required.</div>
-        </button>
-      </div>
-    </div>
-
     <div id="progress" role="progressbar" aria-label="Cache download" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
       <div id="progressBar"></div>
       <div id="percent">0%</div>
@@ -324,7 +217,7 @@
 
   </main>
 
-  <footer id="footer">WebKit Autoloader Installer v0.6.2 by PLK (built 2026-10-28 00:06:14 UTC)<br />This project is free and open source: github.com/itsPLK/ps5-webkit-autoloader</footer>
+  <footer id="footer">WebKit Autoloader Installer v0.7.0 by PLK (built 2026-11-06 22:07:03 UTC)<br />This project is free and open source: github.com/itsPLK/ps5-webkit-autoloader</footer>
 
 <script>
 (function () {
@@ -334,20 +227,13 @@
   var installing = false;
   var failed = false;
   var downloading = false;
-  var version = '0.6.2';
+  var version = '0.7.0';
   var progress = document.getElementById('progress');
   var percent = document.getElementById('percent');
-  var choice = document.getElementById('choice');
   var cacheReady = false;
   var detail = document.getElementById('detail');
   var progressBar = document.getElementById('progressBar');
   var logContainer = document.getElementById('logContainer');
-  var cachePages = { poops: '/slopkit_cache.html', relapse: '/relapse_cache.html' };
-  var cacheMode = location.pathname === cachePages.poops ? 'poops' :
-    location.pathname === cachePages.relapse ? 'relapse' : null;
-  var isCachePage = cacheMode !== null;
-  var navigating = false;
-  var countdown = null;
 
   function setProgress(value) {
     progress.className = '';
@@ -363,69 +249,17 @@
     logContainer.scrollTop = logContainer.scrollHeight;
   }
 
-  // Two keys, on this origin, which the homescreen app shares:
-  //   wkal_exploit  the chain of the last install that actually completed. The
-  //                 pointer reads this, so a new choice never clears it.
-  //   wkal_pending  the next chain, committed only after the cache is ready.
-  // Each chain has its own cache page and manifest.
-  function readKey(key) {
-    try { return window.localStorage.getItem(key); } catch (error) { return null; }
-  }
-  function writeKey(key, value) {
-    try {
-      if (value === null) window.localStorage.removeItem(key);
-      else window.localStorage.setItem(key, value);
-    } catch (error) { }
-  }
-  function valid(chain) { return chain === 'poops' || chain === 'relapse'; }
-
-  var installed = readKey('wkal_exploit');
-  if (!valid(installed)) installed = null;
-  var picked = cacheMode;
-  if (!valid(picked)) picked = null;
-
   var match = /PlayStation 5\/(\d+\.\d+)/.exec(navigator.userAgent);
+  var params = typeof location !== 'undefined' && location.search ? new URLSearchParams(location.search) : null;
+  var fwArg = params ? params.get('fw') : null;
+  if (!match && fwArg) {
+    match = ['PlayStation 5/' + fwArg, fwArg];
+  }
   var fw = match ? parseFloat(match[1]) : 0;
   var hasPoops = fw >= 7 && fw <= 12;
-  var hasRelapse = fw >= 7 && fw <= 13.60 && fw !== 9.05;
-
-  // Ignore stored choices that this known firmware cannot run.
-  if (match) {
-    if (picked === 'poops' && !hasPoops) picked = null;
-    if (picked === 'relapse' && !hasRelapse) picked = null;
-    if (installed === 'poops' && !hasPoops) installed = null;
-    if (installed === 'relapse' && !hasRelapse) installed = null;
-  }
-
+  var is905 = match ? (match[1] === '9.05' || Math.abs(fw - 9.05) < 0.001) : Math.abs(fw - 9.05) < 0.001;
+  var hasRelapse = fw >= 7 && fw <= 13.60 && !is905;
   var unsupported = !!match && !hasPoops && !hasRelapse;
-  var single = hasPoops && !hasRelapse ? 'poops' : hasRelapse && !hasPoops ? 'relapse' : null;
-  var defaultChoice = single || installed || (hasPoops && hasRelapse ? 'poops' : 'relapse');
-  if (!picked) picked = defaultChoice;
-  var needsChoice = !unsupported && !single;
-
-  function showChoice(message) {
-    status.textContent = 'Select Exploit';
-    detail.textContent = (match ? 'Firmware ' + match[1] : 'Your firmware') +
-      ' supports both Poops and Relapse.\n' + message;
-    choice.hidden = false;
-    document.getElementById(defaultChoice).className += ' selected';
-  }
-
-  function choose(chain) {
-    if (navigating) return;
-    navigating = true;
-    if (countdown !== null) clearInterval(countdown);
-    document.getElementById('poops').disabled = true;
-    document.getElementById('relapse').disabled = true;
-    // Keep the previous installed choice until the offline cache is verified.
-    writeKey('wkal_pending', chain);
-    picked = chain;
-    status.textContent = 'Selected ' + (chain === 'poops' ? 'Poops' : 'Relapse') + '...';
-    detail.textContent = 'Preparing cache download...';
-    location.replace(cachePages[chain]);
-  }
-  document.getElementById('poops').onclick = function () { choose('poops'); };
-  document.getElementById('relapse').onclick = function () { choose('relapse'); };
 
   function fail(message) {
     failed = true;
@@ -437,31 +271,31 @@
   }
 
   function install() {
-    if (failed || cacheReady) return;
+    if (failed || cacheReady || installing) return;
     cacheReady = true;
-    setProgress(100);
-    maybeInstall();
-  }
-
-  // Only successful cache completion/check events may proceed.
-  function maybeInstall() {
-    if (!cacheReady || failed || installing) return;
-    if (!picked) return;
     installing = true;
+    setProgress(100);
     status.textContent = 'Verifying offline cache...';
     detail.textContent = 'The offline cache is ready. Keep this page open.';
-    // Check the active cache before committing the pending choice.
+    // Check the active cache before opening the offline app.
     fetch('/app/' + version + '/__complete__')
-      .then(function (response) { return response.text(); })
+      .then(function (response) {
+        if (!response.ok) throw new Error('Cache incomplete. Run the installer again.');
+        return response.text();
+      })
       .then(function (marker) {
         if (marker.trim() !== version) throw new Error('Cache incomplete. Run the installer again.');
-        writeKey('wkal_exploit', picked);
-        writeKey('wkal_pending', null);
+        try {
+          window.localStorage.removeItem('wkal_pending');
+          window.localStorage.removeItem('wkal_exploit');
+        } catch (error) { }
         status.textContent = 'Offline cache ready';
         status.className = 'success';
         progress.className = 'success';
-        detail.textContent = 'Loading selected exploit...';
-        location.replace('/app/index.html?force=' + picked);
+        detail.textContent = 'Loading WebKit Autoloader...';
+        var target = '/app/index.html';
+        if (fwArg) target += '?fw=' + encodeURIComponent(fwArg);
+        location.replace(target);
       })
       .catch(function (error) { fail(error.message); });
   }
@@ -474,35 +308,6 @@
     percent.hidden = true;
     return;
   }
-  if (isCachePage && picked !== cacheMode) {
-    choose(picked);
-    return;
-  }
-  if (!isCachePage) {
-    function startSelection() {
-      if (navigating) return;
-      if (!needsChoice) {
-        choose(defaultChoice);
-        return;
-      }
-      showChoice(installed
-        ? 'Choose an exploit, or wait to use the current selection.'
-        : 'Choose an exploit, or wait to use the default.');
-      setProgress(100);
-      document.getElementById(defaultChoice).focus();
-      var deadline = Date.now() + 5000;
-      function tick() {
-        var seconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
-        percent.textContent = 'Jumping in ' + seconds + ' second(s)...';
-        if (!seconds) choose(defaultChoice);
-      }
-      countdown = setInterval(tick, 250);
-      tick();
-    }
-    if (document.readyState === 'complete') startSelection();
-    else window.addEventListener('load', startSelection);
-    return;
-  }
 
   if (!cache) {
     status.textContent = 'This browser does not support offline AppCache.';
@@ -510,6 +315,7 @@
     progress.hidden = true;
     return;
   }
+
   cache.addEventListener('checking', function () {
     appendLog('[AppCache] Checking for updates...\n');
   });
@@ -537,8 +343,7 @@
     // in-flight noise and must not overwrite the success message.
     if (installing || failed || cacheReady) return;
     downloading = false;
-    // This cached page embeds its version. Reload after swapping so the
-    // marker check and pointer use the new version, without asking again.
+    // Reload after switching so the embedded version and marker stay in sync.
     if (cache.status === cache.UPDATEREADY) {
       try {
         cache.swapCache();

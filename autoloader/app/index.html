@@ -1,41 +1,32 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<title>WebKit Autoloader v0.6.2 by PLK (built 2026-10-28 00:06:14 UTC)</title>
+<title>WebKit Autoloader v0.7.0 by PLK (built 2026-11-06 22:07:03 UTC)</title>
 <body style="background:#111;color:#eee;font:24px sans-serif;margin:10%">
 <p id="status">Loading...</p>
 <script>
 (function () {
-  // A method-specific URL selects its cache before fetching any resources. The choice
-  // was recorded by the installer on this same origin, so it is readable here
-  // with no server running.
-  var version = '0.6.2';
-  var base = '/app/0.6.2/';
-  var forced = new URLSearchParams(location.search).get('force');
-  var chain = forced;
-  if (chain !== 'poops' && chain !== 'relapse') {
-    try { chain = window.localStorage.getItem('wkal_exploit'); } catch (error) { chain = null; }
-  }
+  var version = '0.7.0';
+  var base = '/app/0.7.0/';
+
   var match = /PlayStation 5\/(\d+\.\d+)/.exec(navigator.userAgent);
+  var params = typeof location !== 'undefined' && location.search ? new URLSearchParams(location.search) : null;
+  var fwArg = params ? params.get('fw') : null;
+  if (!match && fwArg) {
+    match = ['PlayStation 5/' + fwArg, fwArg];
+  }
   var fw = match ? parseFloat(match[1]) : 0;
-  var hasPoops = fw >= 7 && fw <= 12;
-  var hasRelapse = fw >= 7 && fw <= 13.60 && fw !== 9.05;
-  if (match && !hasPoops && !hasRelapse) {
-    document.getElementById('status').textContent = 'Unsupported firmware ' + match[1];
+
+  if (match && (fw < 7.00 || fw > 13.60)) {
+    document.getElementById('status').textContent = 'Unsupported firmware ' + match[1] + '.';
     return;
   }
-  if (match && chain === 'poops' && !hasPoops) chain = null;
-  if (match && chain === 'relapse' && !hasRelapse) chain = null;
-  if (chain !== 'poops' && chain !== 'relapse') {
-    chain = hasPoops ? 'poops' : 'relapse';
-  }
-  if (forced !== chain) {
-    location.replace('/app/index.html?force=' + chain);
-    return;
-  }
+
   fetch(base + '__complete__').then(function (r) { return r.text(); }).then(function (marker) {
     if (marker.trim() !== version) throw new Error('Cache incomplete');
-    location.replace(base + chain + '.html');
+    var target = base + 'index.html';
+    if (fwArg) target += '?fw=' + encodeURIComponent(fwArg);
+    location.replace(target);
   }).catch(function () {
     document.getElementById('status').textContent = 'Cache incomplete. Run the installer again.';
   });

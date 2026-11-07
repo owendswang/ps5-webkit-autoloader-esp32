@@ -41,6 +41,10 @@ minimize_file() {
     local tmp_file="${file}.minimize.tmp"
 
     case "$file" in
+        */payloads/*.js)
+            # Payloads are evaluated inside an async function by the loader.
+            terser "$file" --parse bare_returns=true --output "$tmp_file"
+            ;;
         *.js)
             # Terser only reformats here; compression and name mangling are opt-in.
             terser "$file" --output "$tmp_file"
