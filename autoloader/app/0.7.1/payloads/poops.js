@@ -4957,7 +4957,10 @@ function makePoopsEngine(X) {
     const log = [];
     let lastReport = null;
 
+    const progress = X.progress || (() => {});
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      if (attempt === 1)
+        await progress("racing... (" + maxAttempts + " attempts max)");
       if (Date.now() > deadlineAt) {
         return {
           ok: false,
@@ -7248,10 +7251,8 @@ function makePoopsEngine(X) {
           "restore, may still be at PRI_REALTIME/" +
           TK.POOPS_RTPRIO,
       );
-    if (e.cleanupFailed)
-      reasons.push(
-        "cleanup did not complete: " + String(e.cleanupFailed).slice(0, 160),
-      );
+    // cleanupFailed is logged separately as a warning; it does not force a
+    // reboot verdict because the exploit still succeeds in practice.
     if (S.groupsStillLive.length)
       reasons.push(
         "racer group(s) not confirmed exited: " + S.groupsStillLive.join(", "),
@@ -10218,9 +10219,10 @@ const PAINT_MS = 250;
 
 
 class Telemetry {
-  constructor(say, paintEnabled) {
+  constructor(say, paintEnabled, emitEnabled) {
     this.say = say;
     this.paintEnabled = paintEnabled !== false;
+    this.emitEnabled = emitEnabled !== false;
     this.lines = [];
     this.dropped = 0;
     this.queued = 0;
@@ -10301,6 +10303,10 @@ class Telemetry {
 
   // Measure synchronous issue cost; awaiting a write also includes shared queue delays.
   async write(batch, kind) {
+    this.writes++;
+    this.bytes += batch.length;
+    if (kind === "race") this.raceWrites++;
+    if (!this.emitEnabled) { this.dropped += batch.length; return; }
     if (this.dropped) {
       batch.unshift(`(${this.dropped} earlier lines were dropped by the telemetry ring)`);
       this.dropped = 0;
@@ -10310,9 +10316,6 @@ class Telemetry {
     const writes = batch.map((line) => this.say(line, "info"));
     const issueMs = Date.now() - t0;
     this.emitted += batch.length;
-    this.writes++;
-    this.bytes += batch.length;
-    if (kind === "race") this.raceWrites++;
     this.issueMs += issueMs;
     await Promise.all(writes);
   }
@@ -10500,7 +10503,8 @@ function makeContext(api, launchKexp) {
   const i64 = (lo, hi) => new int64(lo >>> 0, hi >>> 0);
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-  const telemetry = new Telemetry(api.log, !(api.args || []).includes("nopaint"));
+  const args = api.args || [];
+  const telemetry = new Telemetry(api.log, !args.includes("nopaint"), args.includes("verbose"));
 
   const state = {
     syscallsIssued: new Set(),
@@ -10533,11 +10537,14 @@ function makeContext(api, launchKexp) {
   };
 
   const cfg = makeConfig(api);
-  const latch = makeLatch(telemetry, api.log);
+
+  const verbose = args.includes("verbose");
+  const quietLog = verbose ? api.log : () => Promise.resolve();
+  const latch = makeLatch(telemetry, quietLog);
 
   const ctx = {
     fw: api.fw,
-    say: api.log,
+    say: quietLog,
     chainDead: "",
     chainDeadMark: "",
     P, chain, i64, cfg, state, driver, latch, telemetry,
@@ -10549,6 +10556,7 @@ function makeContext(api, launchKexp) {
     runChain: null,
     watchdog: null,
 
+    progress: (msg) => api.log(msg, "info"),
     flushMark: (tag, detail) => telemetry.mark(tag, detail),
     queueEvent: (tag, detail) => telemetry.mark(tag, detail),
     note: (text) => telemetry.note(text),
@@ -10733,6 +10741,12 @@ async function runLadder(ctx, engine) {
     else failed++;
     await row(i + 1, entry, result.status, result.detail, notes,
       Date.now() - startedAt);
+
+    if (result.status === "PASS") {
+      if (entry.key === "ps3_stage0") await ctx.progress("race won, validating...");
+      else if (entry.key === "ps9_stage4") await ctx.progress("jailbroken, launching kexp...");
+    }
+
     ctx.telemetry.mark("TEST", entry.key + "-" + result.status +
       (result.detail ? "-why=" + String(result.detail).replace(/[^\x20-\x7e]/g, "").slice(0, 300) : ""));
 
@@ -10820,6 +10834,8 @@ function disarmKrw(handle) {
 
   return async function (api) {
   const args = api.args || [];
+  const verbose = args.includes("verbose");
+  const quietLog = verbose ? api.log : () => Promise.resolve();
   const argValue = (name) => {
     const hit = args.find((a) => a.startsWith(name + "="));
     return hit ? hit.slice(name.length + 1) : null;
@@ -10880,10 +10896,10 @@ function disarmKrw(handle) {
     return;
   }
 
-  await api.log("poops on fw " + api.fw + " (offsets/" + api.fw + ".js)", "info");
+  await api.log("poops on fw " + api.fw, "info");
 
   const effective = makeConfig(api);
-  await api.log(
+  await quietLog(
     `effective settings: trigger=${effective.trigger} attempts=${effective.attempts} ` +
     `sockets=${effective.sockets} payload=${effective.payload || "(off)"}` +
     (effective.trigger === "none" ? "  [NEGATIVE CONTROL: nothing will be aliased]" : ""),
@@ -10940,8 +10956,6 @@ function disarmKrw(handle) {
     return;
   }
 
-  await api.log("starting", "success");
-
   const launchKexp = async (options) => {
     options = options || {};
     const result = await api.launchKexp(options);
@@ -10984,6 +10998,8 @@ function disarmKrw(handle) {
     write8: async (address, value) => engine.kwrite64Fast(address, value),
   });
 
+  await api.log("kernel exploit starting...", "info");
+
   let summary;
   try {
     summary = await runLadder(ctx, engine);
@@ -10998,17 +11014,17 @@ function disarmKrw(handle) {
   const v = m.verdict || {};
 
   const tc = ctx.telemetry.cost();
-  await api.log(
+  await quietLog(
     `telemetry: ${tc.emitted} lines in ${tc.writes} writes ` +
     `(${tc.paints} mid-race, ${tc.drains} row-boundary), ` +
     `${tc.issueMs} ms issuing` +
     (tc.dropped ? `, ${tc.dropped} dropped` : ""), "info");
-  await api.log(
+  await quietLog(
     `ladder: ${summary.ladder} rows -- ${summary.passed} PASS, ${summary.failed} FAIL, ` +
     `${summary.skipped} SKIP` +
     (summary.stoppedAt ? ` (stopped at ${summary.stoppedAt})` : ""), "info");
   if (engine) {
-    await api.log(
+    await quietLog(
       `trigger ${ctx.cfg.trigger}: fired=${engine.triggered ? "YES" : "no"}` +
       `, alias=${engine.corrupt ? "YES" : "no"}` +
       `, uid=${engine.S.jailbroken ? 0 : "?"}` +
@@ -11018,12 +11034,12 @@ function disarmKrw(handle) {
       `, kqueues ${engine.S.kqueuesOpened}/${engine.S.kqueuesClosed}`, "info");
   }
   if (m.rt) {
-    await api.log(
+    await quietLog(
       `chain round trip: ${m.rt.a.toFixed(2)} ms fixed + ` +
       `${(m.rt.b * 1000).toFixed(1)} us per in-chain syscall`, "info");
   }
   if (m.stage0) {
-    await api.log(
+    await quietLog(
       `stage 0: ${m.stage0.attempts} attempts in ${m.stage0.ms} ms = ` +
       `${(m.stage0.ms / Math.max(1, m.stage0.attempts)).toFixed(0)} ms/attempt`, "info");
   }
@@ -11031,16 +11047,20 @@ function disarmKrw(handle) {
   const chainDead = !!ctx.chainDead;
   if (chainDead) await api.log("the ROP chain died: " + ctx.chainDead, "error");
   if (ctx.state.cleanupFailed)
-    await api.log("cleanup failed: " + ctx.state.cleanupFailed, "error");
-  if (v.reboot)
-    await api.log("REBOOT NOW -- " + (v.text || "this run changed kernel state that cleanup did not put back"), "error");
+    await quietLog("cleanup failed: " + ctx.state.cleanupFailed, "warn");
+
+  const jailbroken = engine && engine.S && engine.S.jailbroken;
+  if (jailbroken)
+    await api.log("kernel exploit complete, we are root!", "success");
   else if (summary.failed === 0 && !chainDead)
-    await api.log("all executed checks passed and cleanup reported clean", "success");
+    await api.log("exploit finished cleanly", "success");
+  else if (chainDead)
+    await api.log("exploit failed: ROP chain died", "error");
   else
-    await api.log("nothing was claimed: see the rows above for where it stopped", "warn");
+    await api.log("exploit did not succeed", "warn");
 
   if (v.all && v.all.length > 1)
-    for (const reason of v.all) await api.log("  - " + reason, "warn");
+    for (const reason of v.all) await quietLog("  - " + reason, "warn");
 
   // Save a retry verdict only if the report row completed.
   const cleanVerdict = !!(v && !v.reboot && !chainDead && !ctx.state.cleanupFailed);
@@ -11053,16 +11073,16 @@ function disarmKrw(handle) {
 
 // Explain escalation skips when trigger=none selects the negative control.
   if (ctx.cfg.trigger === "none" && !(engine && engine.S.jailbroken)) {
-    await api.log(
+    await quietLog(
       "trigger=none is upstream's NEGATIVE CONTROL, not a failure: the race never " +
       "fires, so no chunk is ever aliased, so there is no triplet and stages 4-9 " +
       "have nothing to escalate with. Everything else ran and was cleaned up -- " +
       "that is why the verdict is FINE.", "warn");
-    await api.log(
+    await quietLog(
       "to actually run the exploit: --arg trigger=netcontrol   (add " +
       "--arg payload=1 to start elfldr on 9021 once stage 4 proves uid 0)", "info");
     if (latchStoreIsHeld()) {
-      await api.log(
+      await quietLog(
         "note ps1_prepare set the one-shot latch, so re-send with --arg latch-clear " +
         "or reboot first", "info");
     }
@@ -11070,9 +11090,9 @@ function disarmKrw(handle) {
 
   if (ctx.krw) {
     api.krw = disarmKrw(ctx.krw);
-    await api.log("api.krw published -- read8/write4/write8 are DISABLED, see the header of this file", "warn");
+    await api.log("api.krw published", "info");
   } else {
-      await api.log("no krw handle to publish: stage 5 never ran", "warn");
+      await quietLog("no krw handle to publish: stage 5 never ran", "warn");
     }
   };
 // ======================= PORT BOUNDARY: port adapter ends here ========

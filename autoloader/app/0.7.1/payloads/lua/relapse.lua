@@ -3567,6 +3567,7 @@ end
 local MAX_SUPPORTED_FIRMWARE = "13.60"
 
 function relapse_kexploit()
+    if enable_sync_gates then enable_sync_gates() end
     if is_jailbroken() then
         print("[*] process is already jailbroken, nothing to do")
         return

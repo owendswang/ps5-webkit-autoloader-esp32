@@ -11,7 +11,7 @@ import { DEFAULT_BINARIES } from "./binaries.js";
 const DEFAULT_PORT = 9027;
 const ACCEPT_TIMEOUT_MS = 300 * 1000;
 export const PAYLOAD_TIMEOUT_MS = 10 * 60 * 1000;
-export const LOADER_VERSION = "0.2.1";
+export const LOADER_VERSION = "0.2.2";
 
 // Race a promise against a deadline, resolving "overran" if exceeded.
 export function withDeadline(work, ms, onOverrun, configure) {
@@ -624,6 +624,8 @@ export function createPayloadSession({
     describe,
     args: args || [],
     log,
+    enableSyncGates: () => { if (p.enableSyncGates) p.enableSyncGates(); },
+    disableSyncGates: () => { if (p.disableSyncGates) p.disableSyncGates(); },
     stopQueue: (reason) => {
       if (typeof stopQueue !== "function") {
         throw new Error("api.stopQueue() is only available in a standalone payload queue");

