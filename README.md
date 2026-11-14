@@ -6,7 +6,7 @@ The web interface is based on [ps4-psx8-pulse](https://github.com/owendswang/ps4
 
 ## Supported Firmware Version
 
-- 13.52 / 14.00
+- 12.00 - 14.02
 - 13.02 - 13.52
 - 11.50 - 13.00 except 11.52
 - 6.00 - 11.02
