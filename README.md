@@ -7,7 +7,7 @@ The web content in `autoloader/` is based on a modified version of [`ps5-webkit-
 ## Firmware Version Supports
 
 - poops        7.00 - 12.00
-- relapse      6.00 - 13.60
+- relapse      5.00 - 13.60
 
 If it supports both methods, it would use 'relapse' with an active network connection detected and poops without one.
 
