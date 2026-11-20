@@ -2,14 +2,14 @@
 
 A compact HTTP/HTTPS host for the PS5 WebKit Autoloader, packaged as 4 MB flash images for ESP32-PICO, ESP32-S2, ESP32-S3 and ESP32-C3 boards. All targets use LittleFS and do not require PSRAM.
 
-The web content in `autoloader/` is based on a modified version of the [`ps5-webkit-autoloader`](https://github.com/itsPLK/ps5-webkit-autoloader) frontend. Its bundled [`slopkit`](https://github.com/itsPLK/slopkit), [`ps5-unified-autoloader`](https://github.com/owendswang/ps5-unified-autoloader/tree/feat/install-webkit-shortcut) components also contain project-specific modifications and therefore do not exactly match upstream.
+The web content in `autoloader/` is based on a modified version of [`ps5-webkit-autoloader`](https://github.com/itsPLK/ps5-webkit-autoloader) frontend. This project uses a modified build of [`ps5-unified-autoloader`](https://github.com/owendswang/ps5-unified-autoloader/tree/feat/install-webkit-shortcut).
 
 ## Firmware Version Supports
 
 - poops        7.00 - 12.00
-- relapse      7.00 - 13.60 (except 9.05 and 11.40)
+- relapse      6.00 - 13.60
 
-You could choose to use poops or relapse if your FW supports both methods while caching. It would use Poops by default if you don't choose.
+If it supports both methods, it would use 'relapse' with an active network connection detected and poops without one.
 
 ## Usage
 
@@ -76,6 +76,7 @@ is not written to flash. Manifests remain uncompressed in LittleFS.
 - [itsPLK/ps5-unified-autoloader](https://github.com/itsPLK/ps5-unified-autoloader)
 - [jordyidk/slopkit](https://github.com/jordyidk/slopkit)
 - [ntfargo/Relapse-Exploit](https://github.com/ntfargo/Relapse-Exploit)
+- [ufm42/wobkot](https://github.com/ufm42/wobkot)
 
 Credit also belongs to all projects, researchers, and developers referenced by these upstream projects.
 

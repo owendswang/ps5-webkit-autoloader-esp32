@@ -1,9 +1,7 @@
-import { establishPrimitive } from "./webkit.js";
-import { installWindowP } from "./utils/mem.js";
 import { DEFAULT_BINARIES } from "./binaries.js";
 import { installInlineFetch } from "./inlinefetch.js";
 import { runPayloadQueue } from "./standalone.js";
-import { LOADER_VERSION } from "./loader.js";
+import { LOADER_VERSION, runLoader } from "./loader.js";
 
 // Seed the binary configuration for session overrides.
 window.LOADER_CONFIG = { ...DEFAULT_BINARIES, ...((typeof window !== "undefined" && window.LOADER_CONFIG) || {}) };
@@ -206,35 +204,7 @@ window.addEventListener("unhandledrejection", (event) => {
   writeLog(`unhandled rejection: ${msg}`, "error");
 });
 
-async function getPrimitive() {
-  writeLog("Starting WebKit exploit");
-  const primitive = installWindowP(await establishPrimitive(writeEvent));
-  if (!primitive || typeof primitive.read8 !== "function")
-    throw new Error("Memory primitive unavailable");
-
-  writeLog("ARW ready", "success");
-  return primitive;
-}
-
-function getWebKitBase() {
-  const ctor = globalThis.__ps5NativeCtor;
-  if (typeof ctor !== "number" || typeof OFFSET_wk_host_constructor_candidates === "undefined")
-    throw new Error("WebKit base inputs are unavailable");
-
-  for (const offset of OFFSET_wk_host_constructor_candidates) {
-    const base = ctor - offset;
-    if (base >= 0x800000000 && base < 0x900000000 && base % 0x4000 === 0)
-      return base;
-  }
-
-  throw new Error("WebKit base not found");
-}
-
 async function run() {
-  const rejection = window.firmware.rejection();
-  if (rejection)
-    throw new Error(rejection);
-
   // A single-file page (tools/build_standalone.py) carries its own name, its own
   // payload list and no socket, so it says so instead of claiming to be the
   // remote loader -- the operator's first question when the guide opens is
@@ -263,7 +233,7 @@ async function run() {
     writeLog(`PS5 WebKit Remote Loader v${LOADER_VERSION}`, "info");
   }
   writeLog(`Agent: ${navigator.userAgent}`, "info");
-  writeLog(`Firmware: ${window.fw_str}`, "info");
+  writeLog(`Firmware: ${window.fw_str || "detecting"}`, "info");
 
   if (window.loaderHud) {
     // A standalone page never opens a port, so hide the IP/port and display the FW.
@@ -280,15 +250,19 @@ async function run() {
     writeLog(`no embedded binaries in this file: api.launchKexp() will refuse`, "warn");
   }
 
-  const primitive = await getPrimitive();
-  if (window.offsetsLoaded) {
-    await window.offsetsLoaded;
-  }
-  writeLog(`WebKit base: 0x${getWebKitBase().toString(16)}`, "info");
+  if (!window.wobkot || typeof window.wobkot.initialize !== "function")
+    throw new Error("Wobkot runtime is unavailable");
 
-  // serve:false, because this page runs its own queue. Everything above it --
-  // the exploit, the offsets, the cross-check -- is the same work either way.
-  const { p, chain } = await main(primitive, { serve: !standalone });
+  writeLog("Starting Wobkot userland");
+  const { p, chain } = await window.wobkot.initialize();
+  writeLog(`Firmware: ${window.fw_str}`, "info");
+  if (window.loaderHud) {
+    window.loaderHud.setTarget(standalone ? null : "127.0.0.1", standalone ? null : 9027, window.fw_str);
+  }
+  writeLog(`Wobkot userland ready: ARW + ROP`, "success");
+  writeLog(`WebKit base: 0x${p.libSceNKWebKitBase.toString(16)}`, "info");
+
+  if (!standalone) await runLoader(p, chain, writeLog);
 
   if (standalone) {
     // Straight to the queue. runLoader() is not called: it would open a listener

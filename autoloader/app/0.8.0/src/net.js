@@ -4,6 +4,7 @@ const AF_INET = 2;
 const SOCK_STREAM = 1;
 const SOL_SOCKET = 0xffff;
 const SO_REUSEADDR = 4;
+const POLLIN = 0x0001;
 
 const CALL = {
   SOCKET: 0x061,
@@ -16,6 +17,7 @@ const CALL = {
   WRITE: 0x004,
   CLOSE: 0x006,
   GETPID: 0x014,
+  POLL: 0x0d1,
 };
 
 const ERRNO = {
@@ -84,7 +86,7 @@ export async function openListener(p, chain, log, port) {
     : `setsockopt(SO_REUSEADDR) ok`, "info");
 
   // struct sockaddr_in (16 bytes)
-  p.write1(sockaddr.add32(0), 0);
+  p.write1(sockaddr.add32(0), 16); // sin_len
   p.write1(sockaddr.add32(1), AF_INET);
   p.write2(sockaddr.add32(2), htons(port));
   p.write4(sockaddr.add32(4), 0); // INADDR_ANY
@@ -112,40 +114,31 @@ export async function openListener(p, chain, log, port) {
   return { sock, boundPort, sockaddr, peer: p.malloc(16), addrlen };
 }
 
-// Poll for completion of a detached syscall in `slot`, then sync with worker.
-async function waitDetached(p, chain, log, slot, timeoutMs) {
-  const say = log || (() => {});
-  const deadline = Date.now() + timeoutMs;
-
-  while (Date.now() < deadline) {
-    const v = p.read8(slot);
-    if (v.low !== 0 || v.hi !== 0) {
-      if (isFailure(v)) throw new Error(describe(v));
-
-      chain.clear();
-
-      // Drain worker epilogue and confirm responsiveness
-      const pid = await chain.syscall(CALL.GETPID);
-      if (pid.low === 0) throw new Error("worker did not come back after accept");
-      return v;
-    }
-    await sleep(250);
-  }
-  throw new Error(`timed out after ${Math.round(timeoutMs / 1000)}s`);
-}
-
 // Accept a single inbound connection on the listener socket.
 export async function acceptOnce(p, chain, log, listener, timeoutMs) {
-  const slot = p.malloc(8);
-  p.write8(slot, 0);
-  p.write4(listener.addrlen, 16);
-
-  chain.clear();
-  chain.add_syscall_ret(slot, CALL.ACCEPT, listener.sock, listener.peer, listener.addrlen);
-  // The launch is async now: it gates on the worker being parked before arming.
-  await p.launch_chain_detached(chain);
-
-  return await waitDetached(p, chain, log, slot, timeoutMs);
+  // Keep the listener itself blocking. Both fcntl(F_SETFL) and FIONBIO are
+  // denied in the PS5 WebProcess on some firmwares, while SOCK_NONBLOCK in the
+  // socket type can wedge its native-call return path. poll(2) lets us call
+  // accept only when it cannot block.
+  const pollfd = p.malloc(8);
+  p.write4(pollfd, listener.sock.low >>> 0);
+  p.write2(pollfd.add32(4), POLLIN);
+  p.write2(pollfd.add32(6), 0);
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    p.write2(pollfd.add32(6), 0);
+    const ready = await sys(chain, "POLL", pollfd, 1, 0);
+    if (isFailure(ready)) throw new Error(`poll() failed: ${describe(ready)}`);
+    if ((ready.low >>> 0) === 0) {
+      await sleep(100);
+      continue;
+    }
+    p.write4(listener.addrlen, 16);
+    const accepted = await sys(chain, "ACCEPT", listener.sock, listener.peer, listener.addrlen);
+    if (!isFailure(accepted)) return accepted;
+    await sleep(100);
+  }
+  throw new Error(`timed out after ${Math.round(timeoutMs / 1000)}s`);
 }
 
 export async function readBytes(p, chain, fd, buf, max) {

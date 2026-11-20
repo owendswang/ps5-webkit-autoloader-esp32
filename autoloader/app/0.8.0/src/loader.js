@@ -11,7 +11,7 @@ import { DEFAULT_BINARIES } from "./binaries.js";
 const DEFAULT_PORT = 9027;
 const ACCEPT_TIMEOUT_MS = 300 * 1000;
 export const PAYLOAD_TIMEOUT_MS = 10 * 60 * 1000;
-export const LOADER_VERSION = "0.2.2";
+export const LOADER_VERSION = "0.3.0";
 
 // Race a promise against a deadline, resolving "overran" if exceeded.
 export function withDeadline(work, ms, onOverrun, configure) {
@@ -200,26 +200,12 @@ export async function executePayload({ code, size, api, log, say, servedCount })
   const isLua = /^(?:\uFEFF)?--(?:!lua|lua)(?:\r?\n|$)/.test(code) ||
     argsList.includes("compat=remote_lua_loader") ||
     argsList.includes("lua=1");
-  const boxOpener = (say && typeof say.startBox === "function") ? say.startBox
-    : (typeof window !== "undefined" && (window.startLogBox || (window.writeLog && window.writeLog.startBox)));
-  const boxCloser = (say && typeof say.endBox === "function") ? say.endBox
-    : (typeof window !== "undefined" && (window.endLogBox || (window.writeLog && window.writeLog.endBox)));
-  let boxOpened = false;
-
   try {
-    let entry;
     if (isLua) {
-      const { run } = await import("./lua-vm.js");
-      entry = () => run(api, code.replace(/^\uFEFF/, ""), "=payload.lua");
-    } else {
-      entry = runner(`(async function () {\n${code}\n//# sourceURL=payload.js\n})`);
+      throw new Error("Lua payloads are not available in the Wobkot runtime");
     }
+    const entry = runner(`(async function () {\n${code}\n//# sourceURL=payload.js\n})`);
     await log("");
-
-    if (isLua && typeof boxOpener === "function") {
-      boxOpener({ id: "luak1t", label: "Lua" });
-      boxOpened = true;
-    }
 
     let result = await entry();
     if (typeof result === "function") result = await result(api);
@@ -251,9 +237,6 @@ export async function executePayload({ code, size, api, log, say, servedCount })
       }
     }
   } finally {
-    if (boxOpened && typeof boxCloser === "function") {
-      boxCloser();
-    }
     const duration = ((Date.now() - startTime) / 1000).toFixed(1);
     if (typeof window !== "undefined" && window.loaderHud) {
       window.loaderHud.setDone({ duration, servedCount });
@@ -307,7 +290,7 @@ export async function runLoader(p, chain, log, options = {}) {
 
   const state = createSessionState(p, chain);
 
-  say(`remote loader v${LOADER_VERSION}: ARW + hijacked worker + ROP chain, no kernel exploit`, "success");
+  say(`remote loader v${LOADER_VERSION}: Wobkot ARW + native-call ROP, no kernel exploit`, "success");
   say(`ABI: p, chain, krw, fw, bases, gadgets, syscalls, int64, log, sendBlob`, "info");
 
   const listener = await openListener(p, chain, say, DEFAULT_PORT);
@@ -396,7 +379,7 @@ export async function runLoader(p, chain, log, options = {}) {
 export function createPayloadSession({
   p, chain, say, state, deadlineControl, log, sendBlob, args, serialise, stopQueue,
 }) {
-  // Record batches and serialise execution with socket log writes on the shared worker.
+  // Record batches and serialise execution with socket log writes.
   const enqueueOn = typeof serialise === "function" ? serialise : (fn) => fn();
 
   function gatedChain() {

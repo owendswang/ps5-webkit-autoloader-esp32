@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WebKit Autoloader Installer v0.7.1 by PLK (built 2026-11-08 00:51:41 UTC)</title>
+  <title>WebKit Autoloader Installer v0.8.0 by PLK (built 2026-11-20 00:24:26 UTC)</title>
   <style>
     * {
       margin: 0;
@@ -217,7 +217,7 @@
 
   </main>
 
-  <footer id="footer">WebKit Autoloader Installer v0.7.1 by PLK (built 2026-11-08 00:51:41 UTC)<br />This project is free and open source: github.com/itsPLK/ps5-webkit-autoloader</footer>
+  <footer id="footer">WebKit Autoloader Installer v0.8.0 by PLK (built 2026-11-20 00:24:26 UTC)<br />This project is free and open source: github.com/itsPLK/ps5-webkit-autoloader</footer>
 
 <script>
 (function () {
@@ -227,7 +227,7 @@
   var installing = false;
   var failed = false;
   var downloading = false;
-  var version = '0.7.1';
+  var version = '0.8.0';
   var progress = document.getElementById('progress');
   var percent = document.getElementById('percent');
   var cacheReady = false;
@@ -256,10 +256,8 @@
     match = ['PlayStation 5/' + fwArg, fwArg];
   }
   var fw = match ? parseFloat(match[1]) : 0;
-  var hasPoops = fw >= 7 && fw <= 12;
-  var is905 = match ? (match[1] === '9.05' || Math.abs(fw - 9.05) < 0.001) : Math.abs(fw - 9.05) < 0.001;
-  var hasRelapse = fw >= 7 && fw <= 13.60 && !is905;
-  var unsupported = !!match && !hasPoops && !hasRelapse;
+  var hasWobkot = fw >= 6.00 && fw <= 13.60;
+  var unsupported = !!match && !hasWobkot;
 
   function fail(message) {
     failed = true;
@@ -303,7 +301,7 @@
   if (unsupported) {
     status.textContent = 'Unsupported firmware ' + match[1];
     status.className = 'error';
-    detail.textContent = 'Supported: 7.00–12.00 via Poops, 7.00–13.60 via Relapse (except 9.05).';
+    detail.textContent = 'Supported: 6.00–13.60 via Wobkot Relapse and Poops.';
     progress.hidden = true;
     percent.hidden = true;
     return;

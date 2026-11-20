@@ -431,13 +431,11 @@ window.KRW = {
   allproc: OFFSET_KERNEL_ALLPROC,
   rootvnode: OFFSET_KERNEL_ROOTVNODE,
 
-  // TODO: unverified for 9.05. Changes on every 9.x revision (9.00 0xac1451,
-  // 9.20 0xac1471, 9.40 0xac19e1, 9.60 0xac1bc1). Guessing the 9.00 value,
-  // the nearest preceding revision.
+  // Verified on live PS5 FW 9.05 via sysctlbyname probe on /dev/kmem.
   kaslr: {
     mode: "rtmsg2",
-    retStatic: 0x00ac1451,
-    retLow16: 0x1451,
+    retStatic: 0x00ac1681,
+    retLow16: 0x1681,
   },
 
   // Identical across 9.00 / 9.20 / 9.40 / 9.60 - safe.

