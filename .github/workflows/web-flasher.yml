@@ -1,4 +1,5 @@
 name: Deploy ESP32 Web Flasher
+run-name: Web Flasher · ${{ github.event_name }} ${{ github.event.action }} · ${{ github.ref_name }}
 
 on:
   push:
@@ -9,7 +10,7 @@ on:
       - '.github/workflows/web-flasher.yml'
   workflow_dispatch:
   release:
-    types: [published, edited, deleted, released, prereleased, unpublished]
+    types: [published, edited, deleted, unpublished]
 
 concurrency:
   group: pages
