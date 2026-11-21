@@ -1,38 +1,32 @@
 # PS5 / PS4 ESP32 Firmware Installer
 
-A static installer for this repository’s PS5 WebKit Autoloader and PS4 host firmware. Vite builds the TypeScript UI and bundles Espressif `esptool-js`. Project firmware writes at `0x0`. The local firmware tab accepts a `.bin` and a hexadecimal write address aligned to 4 KiB. Web Serial verifies data after writing.
+## Introduction
 
-## Local development
+Install this project's PS5 WebKit Autoloader or PS4 host firmware on an ESP32-S2, ESP32-PICO, ESP32-S3 or ESP32-C3 USB dongle directly from your browser.
 
-Use Node.js 22.12 or later. From the repository root:
+[Open the web flasher](https://owendswang.github.io/ps5-webkit-autoloader-esp32/)
 
-```sh
-cd web-flasher
-npm ci
-npm run sync:releases
-npm run dev
-```
+## Usage
 
-Open the loopback URL Vite prints in desktop Chrome or Edge. PS5 defaults to GitHub’s latest release. Select PS4 for PS4 releases, then choose the version and one of the four hardware models. Selecting S2 or PICO shows a larger hardware photograph. S3 and C3 use a question mark until photographs are provided.
+1. Open the web flasher in a desktop browser with Web Serial support.
+2. Select your board model. Use the hardware preview to identify it.
+3. Under **Project firmware**, select **PS5** or **PS4** and a firmware version. The latest PS5 release is selected by default.
+4. Plug the dongle directly into your computer's USB port. For **ESP32-S2**, hold **RST** while inserting, then release it. **PICO USB-to-UART** dongles have no button to press.
+5. Click **Flash firmware**, select the board's serial port, and keep it plugged in until **Success** appears. Errors and retry instructions appear above the progress area, with details in **Serial log**.
 
-**Flash firmware** stays available before the selection is complete. Clicking it marks missing or invalid fields with red borders, red labels and asterisks, explains the requirements above the status area, and focuses the first field to fix. A short shake draws attention to the fields when reduced motion is off. Each corrected field clears immediately. The serial port picker opens only after validation succeeds.
+To use your own image, choose **Local firmware**, select a `.bin` for your board and enter its write address. The default is `0x0`, and addresses must be aligned to 4 KiB. Project releases always write at `0x0`. Local files stay in your browser.
 
-The flasher checks the connected board before writing. Board and firmware controls remain locked from port selection through download, writing and verification. **Serial log** opens by default and keeps download, connection and verification messages in a scrolling area.
+## Credits
 
-PS4 version labels omit the `PS4-` prefix while retaining the original release tag internally. Firmware downloads start after serial port selection and show received bytes and a percentage, with progress entries in the log. The progress bar resets for flashing, then the installer verifies the written data. A green **Success** or red **Failure** block replaces the status row when finished. Detailed results remain in the log, with errors also shown above the status area.
+- Firmware flashing: [Espressif esptool-js](https://github.com/espressif/esptool-js).
+- Checksums and compression: [noble-hashes](https://github.com/paulmillr/noble-hashes) and [pako](https://github.com/nodeca/pako).
+- Typeface: [Chivo by Omnibus-Type](https://github.com/Omnibus-Type/Chivo), distributed by [Fontsource](https://fontsource.org/fonts/chivo).
+- PS5 firmware sources: [ps5-webkit-autoloader](https://github.com/itsPLK/ps5-webkit-autoloader) and [ps5-unified-autoloader](https://github.com/owendswang/ps5-unified-autoloader).
+- PS4 firmware source: [ps4-psx8-pulse](https://github.com/owendswang/ps4-psx8-pulse).
+- Interface design and motion: design-taste-frontend. Hardware photographs supplied by the project maintainer. Further upstream credits appear in the page's **Credits** section.
 
-The browser reads `releases/catalog.json` from the deployed site when opened. The catalog contains the four most recently published firmware releases for each platform. After serial port selection, project firmware downloads from the same site into browser memory, with download progress and a SHA-256 check. Local firmware is read directly from the chosen file and stays in the browser. Both modes check the board and flash capacity before writing, then verify the result with MD5.
+## Licenses
 
-The sync command downloads release metadata and firmware into the ignored `public/releases/` directory. Run it again to refresh local releases. Files are stored as `files/<asset-id>.bin` and reused when their size and checksum match GitHub’s metadata. After successfully publishing the reduced catalog, synchronization removes old generated firmware files outside the retained four releases per platform. Synchronization uses Undici to honor `HTTP_PROXY`, `HTTPS_PROXY` and `NO_PROXY`, and retries transient failures. `GITHUB_TOKEN` can authenticate API calls during synchronization and stays in the build environment.
-
-PS4 tags and asset names identify historical releases whose prerelease flags differ from the current convention. Other version tags starting with `v` belong to PS5. Remaining releases use the prerelease flag to select PS4 or PS5.
-
-`npm run build` type-checks the source and copies the static site and synchronized firmware to `dist/`. `npm run preview` serves that production build locally.
-
-## GitHub Pages
-
-In the repository’s **Settings → Pages**, select **GitHub Actions** as the publishing source. The workflow synchronizes releases and builds from the default branch on release events, on changes to the flasher on `main`, or when manually dispatched. A six-hour refresh picks up attachments uploaded after publication. The Pages upload includes `catalog.json` and `files/*.bin`. A successful deployment deletes its temporary Actions upload artifact. Artifacts from failed deployments expire after one day. Firmware files remain outside Git history.
-
-## Credits and licensing
-
-The page footer lists installer dependencies, PS5 and PS4 firmware sources, and the applicable licensing notices. Original installer code uses the [MIT license](LICENSE). Vite generates `third-party-licenses.txt` for bundled browser dependencies during production builds. Firmware components retain their upstream licenses and notices, as described in the repository’s root license and release sources.
+- Original web installer code: [MIT](LICENSE).
+- Dependencies: esptool-js uses Apache-2.0, noble-hashes uses MIT, pako uses MIT/Zlib, and Chivo uses SIL OFL-1.1. See the [bundled dependency notices](https://owendswang.github.io/ps5-webkit-autoloader-esp32/third-party-licenses.txt).
+- Firmware: see the [project licensing notice](../LICENSE). Third-party firmware, web content and payloads retain their upstream terms. Interface assets and photographs retain their authors' rights. Further notices appear in the page's **License** section.
