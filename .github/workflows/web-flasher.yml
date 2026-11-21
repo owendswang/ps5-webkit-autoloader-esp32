@@ -1,0 +1,68 @@
+name: Deploy ESP32 Web Flasher
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web-flasher/**'
+      - '.github/workflows/web-flasher.yml'
+  workflow_dispatch:
+  release:
+    types: [published, edited, deleted, released, prereleased]
+  schedule:
+    - cron: '17 */6 * * *'
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      artifact_id: ${{ steps.artifact.outputs.artifact_id }}
+    defaults:
+      run:
+        working-directory: web-flasher
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web-flasher/package-lock.json
+      - run: npm ci
+      - run: npm run sync:releases
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v4
+        id: artifact
+        with:
+          path: web-flasher/dist
+          retention-days: 1
+
+  deploy:
+    if: github.event_name == 'release' || github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+      actions: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment
+      - name: Delete deployed artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PAGES_ARTIFACT_ID: ${{ needs.build.outputs.artifact_id }}
+        run: gh api --method DELETE "repos/$GITHUB_REPOSITORY/actions/artifacts/$PAGES_ARTIFACT_ID"

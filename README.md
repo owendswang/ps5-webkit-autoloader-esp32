@@ -26,6 +26,10 @@ A network connection is still **REQUIRED** to complete the `Relapse` exploit pro
 
 If an attempt fails, follow the on-screen instruction to reboot and try again. If the console freezes, crashes, or powers off, turn it back on and retry. Use this project at your own risk.
 
+## Browser flasher
+
+Use the [PS5 / PS4 ESP32 Firmware Installer](web-flasher/README.md) to select a release and hardware model, then flash over USB from desktop Chrome or Edge. The installer defaults to the latest PS5 release and also lists PS4 firmware. Its guide covers local development and GitHub Pages deployment.
+
 ## Requirements
 
 - Arduino CLI

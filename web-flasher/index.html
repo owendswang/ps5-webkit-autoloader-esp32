@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en" data-type="software" data-radius="sharp" data-buttons="solid" data-ground="sky">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="page-type" content="software">
+    <meta name="site-kind" content="software">
+    <meta name="theme-color" content="#eef0f3">
+    <meta name="description" content="Install PS5 WebKit Autoloader or the PS4 exploit host on an ESP32 USB dongle. Choose a release and flash from your browser.">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="PS5 / PS4 ESP32 Firmware Installer">
+    <meta property="og:description" content="Install the PS5 WebKit Autoloader or PS4 host firmware on your ESP32 USB dongle.">
+    <title>PS5 / PS4 ESP32 Firmware Installer</title>
+    <link rel="icon" href="/favicon.png" type="image/png">
+    <link rel="stylesheet" href="/assets/motion/motion.css">
+    <script>document.documentElement.classList.add('reveal-ready');setTimeout(()=>{if(!document.documentElement.hasAttribute('data-ui-motion-ready'))document.documentElement.classList.remove('reveal-ready')},2500)</script>
+    <script type="module" src="/assets/motion/motion.js"></script>
+    <script type="module" src="/assets/moments/moments.js"></script>
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+  <body>
+    <!-- Software · collage · cool-grey-cobalt · Chivo · sharp · live status frame · word-highlight -->
+    <a class="skip-link" href="#flasher">Skip to flasher</a>
+    <header class="site-header nav" id="top">
+      <div class="wrap header-inner">
+        <a class="wordmark nav__logo m-link" href="#main"><span class="chip-mark" aria-hidden="true"></span> PS5 / PS4 · ESP32 Installer</a>
+        <nav aria-label="Main"><a class="m-link" href="#help">Flash guide <span aria-hidden="true">↘</span></a></nav>
+      </div>
+    </header>
+    <main id="main">
+      <section class="hero hero--collage" aria-labelledby="hero-title">
+        <form class="wrap hero-grid" id="flash-form" data-reveal novalidate>
+          <div class="hero__text">
+            <h1 id="hero-title" data-reveal-item>PS5 &amp; PS4 hosts.<br>On an <em>ESP32.</em></h1>
+            <p class="hero__lead" data-reveal-item>Install PS5 WebKit Autoloader or the PS4 host on your USB dongle. Use a project release or your own firmware.</p>
+            <div class="system-note" data-reveal-item><span aria-hidden="true"></span> Desktop Chrome or Edge</div>
+            <fieldset class="board-picker" id="board-picker" aria-describedby="board-instructions" aria-errormessage="issue" tabindex="-1" data-reveal-item>
+              <legend>Board model</legend>
+              <div class="board-options">
+                <label>
+                  <input type="radio" name="board" value="ESP32-S2" required data-connection="Hold RST while plugging the dongle directly into your computer’s USB port. Release RST after insertion.">
+                  <img class="board-icon" src="/boards/esp32-s2.jpeg" alt="" width="44" height="44"><span>ESP32-S2</span>
+                </label>
+                <label>
+                  <input type="radio" name="board" value="ESP32-PICO" required data-connection="Plug the USB-to-UART dongle directly into your computer’s USB port. This model has no button to press.">
+                  <img class="board-icon" src="/boards/esp32-pico.jpeg" alt="" width="44" height="44"><span>ESP32-PICO</span>
+                </label>
+                <label>
+                  <input type="radio" name="board" value="ESP32-S3" required data-connection="Connect the ESP32-S3 over USB. If the board needs manual bootloader entry, follow its manufacturer’s instructions.">
+                  <span class="board-icon board-placeholder" aria-hidden="true">?</span><span>ESP32-S3</span>
+                </label>
+                <label>
+                  <input type="radio" name="board" value="ESP32-C3" required data-connection="Connect the ESP32-C3 over USB. If the board needs manual bootloader entry, follow its manufacturer’s instructions.">
+                  <span class="board-icon board-placeholder" aria-hidden="true">?</span><span>ESP32-C3</span>
+                </label>
+              </div>
+              <div class="board-preview" id="board-preview">
+                <img id="board-photo" alt="" width="240" height="240" hidden>
+                <span id="board-unknown" aria-hidden="true">?</span>
+              </div>
+              <p class="board-instructions" id="board-instructions" aria-live="polite">Select a model to see how to connect it.</p>
+            </fieldset>
+          </div>
+
+          <div class="hero__media workbench" data-visual id="flasher" tabindex="-1" data-reveal-item>
+            <div class="app-frame">
+              <div class="app-bar"><h2>Install host firmware</h2><span class="protocol">USB SERIAL</span></div>
+              <div class="flash-fields">
+                <div class="firmware-tabs" role="tablist" aria-label="Firmware source">
+                  <button type="button" role="tab" id="release-tab" aria-selected="true" aria-controls="release-panel">Project firmware</button>
+                  <button type="button" role="tab" id="local-tab" aria-selected="false" aria-controls="local-panel" tabindex="-1">Local firmware</button>
+                </div>
+                <div class="firmware-panels">
+                  <fieldset class="mode-panel" id="release-panel" role="tabpanel" aria-labelledby="release-tab" data-active="true">
+                    <label for="platform">Console platform</label>
+                    <select id="platform" aria-errormessage="issue"><option value="PS5">PS5 · WebKit Autoloader</option><option value="PS4">PS4 · Exploit host</option></select>
+                    <label for="version">Firmware version</label>
+                    <select id="version" disabled required aria-errormessage="issue"><option value="">Loading releases…</option></select>
+                    <p class="field-note" id="firmware-note" role="status">Loading releases…</p>
+                    <div class="release-link-slot"><a class="release-link" id="release-link" target="_blank" rel="noopener" hidden>Read release notes ↗</a><span>Write at <code>0x0</code></span></div>
+                  </fieldset>
+                  <fieldset class="mode-panel" id="local-panel" role="tabpanel" aria-labelledby="local-tab" data-active="false" disabled inert>
+                    <label for="firmware">Firmware image</label>
+                    <input type="file" id="firmware" accept=".bin" required aria-describedby="local-note" aria-errormessage="issue">
+                    <p class="field-note" id="local-note">Choose a .bin for this board. The file stays in your browser.</p>
+                    <label for="offset">Write address</label>
+                    <input type="text" id="offset" value="0x0" pattern="0[xX][0-9a-fA-F]{1,8}" required spellcheck="false" aria-describedby="offset-note" aria-errormessage="issue">
+                    <p class="field-note" id="offset-note">Hex address, aligned to 4 KiB. Example: 0x10000.</p>
+                  </fieldset>
+                </div>
+                <button class="btn btn--primary" id="flash-button" type="submit" disabled>Flash firmware <span aria-hidden="true">↗</span></button>
+                <div class="issue-slot"><p class="issue" id="issue" role="alert" hidden></p></div>
+                <noscript><p class="issue">Enable JavaScript to use Web Serial.</p></noscript>
+              </div>
+              <div class="flash-status" id="flash-status" data-state="idle">
+                <div class="status-meta">
+                  <span class="status-text" id="status-text" role="status">Choose a board model</span>
+                  <span class="percent" id="percent" aria-hidden="true">0%</span>
+                </div>
+                <div class="progress-track"><progress id="progress" max="100" value="0" aria-label="Flash progress"></progress></div>
+              </div>
+              <details class="serial-log" open>
+                <summary>Serial log</summary>
+                <pre id="serial-log" tabindex="0" aria-label="Serial log">The log will appear when you start flashing.</pre>
+              </details>
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <section class="section guide" id="help" data-moment="word-highlight" aria-labelledby="guide-title">
+        <div class="wrap guide-grid" data-reveal>
+          <h2 id="guide-title" data-reveal-item>From USB dongle to console host</h2>
+          <p class="mo-wh__text" data-reveal-item>After installing project firmware, connect your console to <strong>ESP32_PORTAL</strong> to open the host.</p>
+          <dl>
+            <div data-reveal-item><dt>Connect the board</dt><dd>Follow the USB instructions for your selected model. Close any serial monitor that might be using the port.</dd></div>
+            <div data-reveal-item><dt>Install and verify</dt><dd>Choose a project release or a local .bin with its write address. Click Flash firmware and choose the board’s serial port. Keep the dongle plugged in until verification finishes.</dd></div>
+            <div data-reveal-item><dt>Connect your console</dt><dd>Plug the dongle into a USB port for power. Join ESP32_PORTAL with password 12345678. On PS5, open User’s Guide from Settings. On PS4, open the browser at http://192.168.4.1/. Check the release notes for supported console firmware.</dd></div>
+          </dl>
+        </div>
+      </section>
+    </main>
+    <footer class="site-footer">
+      <div class="wrap" data-reveal>
+        <div class="footer-inner" data-reveal-item>
+          <a class="m-link" href="https://github.com/owendswang/ps5-webkit-autoloader-esp32">Project on GitHub ↗</a>
+          <span>ESP32 firmware installer</span>
+        </div>
+        <details class="footer-disclosure" id="credits" data-reveal-item>
+          <summary>Credits</summary>
+          <div class="footer-columns">
+            <div>
+              <h2>Web installer</h2>
+              <ul>
+                <li>Firmware flashing by <a href="https://github.com/espressif/esptool-js">Espressif esptool-js</a>.</li>
+                <li>Checksums by <a href="https://github.com/paulmillr/noble-hashes">Paul Miller’s noble-hashes</a>, compression by <a href="https://github.com/nodeca/pako">pako</a>.</li>
+                <li>Chivo by <a href="https://github.com/Omnibus-Type/Chivo">Omnibus-Type</a>, distributed through <a href="https://fontsource.org/fonts/chivo">Fontsource</a>.</li>
+                <li>Interface motion from design-taste-frontend. Hardware photographs supplied by the project maintainer.</li>
+              </ul>
+            </div>
+            <div>
+              <h2>PS5 firmware</h2>
+              <ul>
+                <li><a href="https://github.com/itsPLK/ps5-webkit-autoloader">itsPLK/ps5-webkit-autoloader</a></li>
+                <li><a href="https://github.com/itsPLK/ps5-unified-autoloader">itsPLK/ps5-unified-autoloader</a> and <a href="https://github.com/owendswang/ps5-unified-autoloader">owendswang’s modified build</a></li>
+                <li><a href="https://github.com/jordyidk/slopkit">jordyidk/slopkit</a>, <a href="https://github.com/ntfargo/Relapse-Exploit">ntfargo/Relapse-Exploit</a> and <a href="https://github.com/ufm42/wobkot">ufm42/wobkot</a></li>
+              </ul>
+            </div>
+            <div>
+              <h2>PS4 firmware</h2>
+              <ul>
+                <li><a href="https://github.com/owendswang/ps4-psx8-pulse">ps4-psx8-pulse</a></li>
+                <li><a href="https://rawgame4.github.io/">rawgame4</a> and <a href="https://raw13g.github.io/">raw13g</a></li>
+                <li>Firmware also uses <a href="https://github.com/espressif/arduino-esp32">Arduino ESP32</a> and <a href="https://github.com/littlefs-project/littlefs">LittleFS</a>. Credit extends to the researchers, developers and projects named by these upstream sources.</li>
+              </ul>
+            </div>
+          </div>
+        </details>
+        <details class="footer-disclosure" id="licenses" data-reveal-item>
+          <summary>License</summary>
+          <div class="footer-columns">
+            <div>
+              <h2>Web installer</h2>
+              <p>Original installer code is MIT licensed. esptool-js uses Apache-2.0, noble-hashes and atob-lite use MIT, pako uses MIT and Zlib, and Chivo uses SIL OFL-1.1. Interface assets and photographs retain their authors’ rights.</p>
+              <a id="bundled-licenses" href="./third-party-licenses.txt" hidden>Read bundled dependency licenses</a>
+              <details class="license-text"><summary>Read the installer MIT license</summary><pre id="installer-license"></pre></details>
+            </div>
+            <div>
+              <h2>Firmware</h2>
+              <p>The repository’s original firmware and build code use MIT. Web content, payloads and other third-party components retain their upstream terms. The repository notice describes slopkit-derived material with no stated license.</p>
+              <p>ps5-unified-autoloader supplies a GPL-3.0 license. Arduino ESP32 includes LGPL-2.1 material, and LittleFS uses BSD-3-Clause. Each release’s source and upstream notices specify the terms for its bundled components.</p>
+              <ul>
+                <li><a href="https://github.com/owendswang/ps5-webkit-autoloader-esp32/blob/main/LICENSE">Project licensing notice and MIT license</a></li>
+                <li><a href="https://github.com/owendswang/ps5-webkit-autoloader-esp32/tree/ps4">PS4 source and notices</a></li>
+                <li><a href="https://github.com/owendswang/ps5-unified-autoloader/blob/feat/install-webkit-shortcut/LICENSE">ps5-unified-autoloader license</a></li>
+                <li><a href="https://github.com/espressif/arduino-esp32/blob/2.0.11/LICENSE.md">Arduino ESP32 license</a> · <a href="https://github.com/littlefs-project/littlefs/blob/master/LICENSE.md">LittleFS license</a></li>
+              </ul>
+            </div>
+          </div>
+        </details>
+      </div>
+    </footer>
+  </body>
+</html>
