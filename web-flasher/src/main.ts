@@ -4,10 +4,13 @@ import { bytesToHex } from '@noble/hashes/utils.js'
 import { ESPLoader, Transport } from 'esptool-js'
 import installerLicense from '../LICENSE?raw'
 import { initMotion, shakeInvalid } from './motion'
+import { t } from './i18n'
+import { initPreferences } from './preferences'
 import './style.css'
 
 document.querySelector<HTMLElement>('#installer-license')!.textContent = installerLicense
 document.querySelector<HTMLAnchorElement>('#bundled-licenses')!.hidden = !import.meta.env.PROD
+initPreferences()
 initMotion()
 
 const form = document.querySelector<HTMLFormElement>('#flash-form')!
@@ -42,6 +45,20 @@ type Release = { tag: string; platform: string; latest: boolean; url: string; as
 let releases: Release[] = []
 let releaseState: 'loading' | 'ready' | 'error' = 'loading'
 let validationAttempted = false
+type Message = string | (() => string)
+type StatusState = 'idle' | 'active' | 'done' | 'error'
+let displayedIssue: Message = ''
+let displayedStatus: { state: StatusState; message: Message } = { state: 'idle', message: 'Choose a board model' }
+let progressLabel = 'Flash progress'
+let hasLog = false
+let catalogError: unknown
+let momentsQueue = Promise.resolve()
+
+class LocalizedError extends Error {
+  constructor(readonly key: string, readonly values: Record<string, string | number>) {
+    super(key)
+  }
+}
 const fields = { board: boardPicker, platform, version, firmware, offset }
 type Field = keyof typeof fields
 type ValidationIssue = { field: Field; message: string }
@@ -88,7 +105,7 @@ function renderValidation(errors: ValidationIssue[]) {
     else fields[key].removeAttribute('aria-invalid')
     fieldLabels[key].classList.toggle('field-invalid-label', invalid)
   }
-  showIssue(errors.map(error => error.message).join(' '))
+  showIssue(() => errors.map(error => t(error.message)).join(' '))
 }
 
 function focusValidation(errors: ValidationIssue[]) {
@@ -133,12 +150,10 @@ function updateSelection() {
   button.disabled = false
   releasePanel.disabled = source !== 'release'
   localPanel.disabled = source !== 'local'
-  offset.setCustomValidity(address === null ? 'Enter a hexadecimal address on a 4 KiB boundary.' : '')
+  offset.setCustomValidity(address === null ? t('Enter a hexadecimal address on a 4 KiB boundary.') : '')
   releaseLink.hidden = !release
   if (release) releaseLink.href = release.url
-  firmwareNote.textContent = asset
-    ? `${asset.name} · ${(asset.size / 1024 ** 2).toFixed(0)} MiB`
-    : release ? 'Choose a board model available in this release.' : releaseState === 'loading' ? 'Loading releases…' : 'No firmware available for this platform.'
+  renderFirmwareNote()
   for (const input of Array.from(boardPicker.querySelectorAll<HTMLInputElement>('input'))) {
     input.disabled = source === 'release' && !release?.assets.some(asset => asset.model === input.value)
   }
@@ -154,7 +169,7 @@ function updateVersions() {
   const available = releases.filter(release => release.platform === platform.value)
   const preferred = available.find(release => release.latest) || available[0]
   version.replaceChildren(...available.map(release => new Option(
-    `${release.platform === 'PS4' ? release.tag.replace(/^PS4-/i, '') : release.tag}${release === preferred ? ' · Latest' : ''}`, release.tag,
+    `${release.platform === 'PS4' ? release.tag.replace(/^PS4-/i, '') : release.tag}${release === preferred ? ` · ${t('Latest')}` : ''}`, release.tag,
   )))
   version.disabled = busy || available.length === 0
   if (preferred) version.value = preferred.tag
@@ -162,7 +177,7 @@ function updateVersions() {
 }
 
 async function loadReleases() {
-  firmwareNote.textContent = 'Loading releases…'
+  firmwareNote.textContent = t('Loading releases…')
   try {
     const response = await fetch(`${import.meta.env.BASE_URL}releases/catalog.json`, { cache: 'no-cache', signal: AbortSignal.timeout(30000) })
     if (!response.ok) throw new Error('Release catalog unavailable. Please try again later.')
@@ -173,9 +188,9 @@ async function loadReleases() {
     updateVersions()
   } catch (error) {
     releaseState = 'error'
-    version.replaceChildren(new Option('Releases unavailable', ''))
+    catalogError = error
+    version.replaceChildren(new Option(t('Releases unavailable'), ''))
     updateSelection()
-    firmwareNote.textContent = errorMessage(error)
   }
 }
 
@@ -210,18 +225,80 @@ function selectedBoard() {
   return boardPicker.querySelector<HTMLInputElement>('input:checked')
 }
 
-function showIssue(message: string) {
+function resolveMessage(message: Message) {
+  return typeof message === 'function' ? message() : t(message)
+}
+
+function renderIssue() {
+  const message = resolveMessage(displayedIssue)
   if (issue.textContent !== message) issue.textContent = message
   issue.hidden = !message
 }
 
-function showStatus(state: 'idle' | 'active' | 'done' | 'error', message: string) {
+function showIssue(message: Message) {
+  displayedIssue = message
+  renderIssue()
+}
+
+function renderStatus() {
+  const { state, message: value } = displayedStatus
+  const message = resolveMessage(value)
   status.dataset.state = state
-  const result = state === 'done' ? 'Success' : state === 'error' ? 'Failure' : ''
+  const result = state === 'done' ? t('Success') : state === 'error' ? t('Failure') : ''
   statusText.textContent = result || message
   statusText.setAttribute('aria-label', result ? `${result}. ${message}` : message)
   statusText.title = message
-  if (result) writeLog(`${message}\n`)
+}
+
+function showStatus(state: StatusState, message: Message) {
+  displayedStatus = { state, message }
+  renderStatus()
+  if (state === 'done' || state === 'error') writeLog(`${resolveMessage(message)}\n`)
+}
+
+function setProgressLabel(key: string) {
+  progressLabel = key
+  progress.setAttribute('aria-label', t(key))
+}
+
+function renderFirmwareNote() {
+  const asset = selectedAsset()
+  firmwareNote.textContent = releaseState === 'error' ? errorMessage(catalogError) : asset
+    ? `${asset.name} · ${(asset.size / 1024 ** 2).toFixed(0)} MiB`
+    : t(selectedRelease() ? 'Choose a board model available in this release.' : releaseState === 'loading' ? 'Loading releases…' : 'No firmware available for this platform.')
+}
+
+function renderBoardInstructions() {
+  const board = selectedBoard()
+  boardInstructions.textContent = t(board?.dataset.connection ?? 'Select a model to see how to connect it.')
+  if (board) boardPhoto.alt = t('{board} USB dongle', { board: board.value })
+}
+
+function refreshMoments() {
+  momentsQueue = momentsQueue.then(async () => {
+    const url = new URL(`${import.meta.env.BASE_URL}assets/moments/moments.js`, document.baseURI).href
+    const moments = await import(/* @vite-ignore */ url)
+    moments.unmountAll(document)
+    await moments.mountAll(document)
+  }).catch(error => console.warn('Guide motion:', error))
+}
+
+function refreshLanguage() {
+  const available = releases.filter(release => release.platform === platform.value)
+  const preferred = available.find(release => release.latest) || available[0]
+  for (const option of Array.from(version.options)) {
+    const release = available.find(release => release.tag === option.value)
+    if (release) option.text = `${release.platform === 'PS4' ? release.tag.replace(/^PS4-/i, '') : release.tag}${release === preferred ? ` · ${t('Latest')}` : ''}`
+    else if (releaseState !== 'ready') option.text = t(releaseState === 'loading' ? 'Loading releases…' : 'Releases unavailable')
+  }
+  renderBoardInstructions()
+  renderFirmwareNote()
+  renderIssue()
+  renderStatus()
+  setProgressLabel(progressLabel)
+  offset.setCustomValidity(localAddress() === null ? t('Enter a hexadecimal address on a 4 KiB boundary.') : '')
+  if (!hasLog) log.textContent = t('The log will appear when you start flashing.')
+  refreshMoments()
 }
 
 function showProgress(value: number) {
@@ -231,12 +308,13 @@ function showProgress(value: number) {
 }
 
 function writeLog(text: string) {
+  if (!hasLog) { log.textContent = ''; hasLog = true }
   log.textContent = `${log.textContent}${text}`.slice(-20000)
   log.scrollTop = log.scrollHeight
 }
 
 function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error)
+  return error instanceof LocalizedError ? t(error.key, error.values) : t(error instanceof Error ? error.message : String(error))
 }
 
 function protectWrite(event: BeforeUnloadEvent) {
@@ -255,13 +333,12 @@ if (!canFlash) {
 boardPicker.addEventListener('change', () => {
   if (busy) return
   const board = selectedBoard()
-  if (board?.dataset.connection) boardInstructions.textContent = board.dataset.connection
+  renderBoardInstructions()
   const thumbnail = board?.closest('label')?.querySelector('img')
   boardPhoto.hidden = !thumbnail
   boardUnknown.hidden = Boolean(thumbnail)
   if (thumbnail) {
     boardPhoto.src = thumbnail.src
-    boardPhoto.alt = `${board!.value} USB dongle`
   }
   updateSelection()
 })
@@ -276,6 +353,8 @@ form.addEventListener('change', () => {
   if (busy || !canFlash || validationAttempted) return
   showIssue('')
 })
+window.addEventListener('flasher:language', refreshLanguage)
+refreshLanguage()
 void loadReleases()
 
 form.addEventListener('submit', async event => {
@@ -315,6 +394,7 @@ form.addEventListener('submit', async event => {
   showProgress(0)
   showStatus('active', 'Choose a serial port')
   log.textContent = ''
+  hasLog = true
 
   let port: SerialPort | undefined
   let transport: Transport | undefined
@@ -339,7 +419,7 @@ form.addEventListener('submit', async event => {
     const description = await loader.main()
     const detectedBoard = description.startsWith('ESP32-PICO') ? 'ESP32-PICO' : loader.chip.CHIP_NAME
     if (board !== detectedBoard) {
-      throw new Error(`Selected ${board}, but the serial port reported ${description}. Check the board you selected.`)
+      throw new LocalizedError('Selected {board}, but the serial port reported {detected}. Check the board you selected.', { board, detected: description })
     }
 
     const flashSize = await loader.detectFlashSize()
@@ -347,16 +427,16 @@ form.addEventListener('submit', async event => {
     if (!size) throw new Error('Could not detect the flash capacity of this board.')
     const capacity = Number(size[1]) * (size[2] === 'MB' ? 1024 ** 2 : 1024)
     const imageSize = asset?.size ?? file!.size
-    if (address + Math.ceil(imageSize / 4) * 4 > capacity) throw new Error(`The image exceeds the board’s ${flashSize} flash capacity at this address.`)
+    if (address + Math.ceil(imageSize / 4) * 4 > capacity) throw new LocalizedError('The image exceeds the board’s {size} flash capacity at this address.', { size: flashSize! })
     if (file) {
       showStatus('active', 'Reading local firmware')
-      writeLog(`Local firmware: ${file.name} (${file.size} bytes)\n`)
+      writeLog(`${t('Local firmware: {name} ({size} bytes)', { name: file.name, size: file.size })}\n`)
     }
     const data = downloaded ?? new Uint8Array(await file!.arrayBuffer())
 
-    showStatus('active', `Writing to ${detectedBoard}`)
-    writeLog(`Writing ${data.length} bytes to ${detectedBoard} at 0x${address.toString(16)}\n`)
-    progress.setAttribute('aria-label', 'Flash progress')
+    showStatus('active', () => t('Writing to {board}', { board: detectedBoard }))
+    writeLog(`${t('Writing {size} bytes to {board} at {address}', { size: data.length, board: detectedBoard, address: `0x${address.toString(16)}` })}\n`)
+    setProgressLabel('Flash progress')
     showProgress(0)
     await loader.writeFlash({
       fileArray: [{ address, data }],
@@ -379,7 +459,7 @@ form.addEventListener('submit', async event => {
       await loader.after()
       showStatus('done', 'Firmware written and verified')
     } catch (error) {
-      writeLog(`\nReset: ${errorMessage(error)}\n`)
+      writeLog(`\n${t('Reset: {message}', { message: errorMessage(error) })}\n`)
       showStatus('done', 'Verified. Reconnect your board to restart it.')
     }
   } catch (error) {
@@ -388,8 +468,8 @@ form.addEventListener('submit', async event => {
       showIssue(message)
       showStatus('error', message)
     } else {
-      const message = errorMessage(error)
-      writeLog(`\n${message}\n`)
+      const message = () => errorMessage(error)
+      writeLog(`\n${message()}\n`)
       showIssue(message)
       showStatus('error', 'Flash failed')
     }
@@ -398,9 +478,10 @@ form.addEventListener('submit', async event => {
       try {
         await transport.disconnect()
       } catch (error) {
-        const message = `Could not close the serial port. Reconnect the board before retrying. (${errorMessage(error)})`
-        writeLog(`\n${message}\n`)
-        showIssue(issue.hidden ? message : `${issue.textContent} ${message}`)
+        const message = () => t('Could not close the serial port. Reconnect the board before retrying. ({message})', { message: errorMessage(error) })
+        writeLog(`\n${message()}\n`)
+        const previousIssue = displayedIssue
+        showIssue(issue.hidden ? message : () => `${resolveMessage(previousIssue)} ${message()}`)
       }
     }
     window.removeEventListener('beforeunload', protectWrite)
@@ -421,9 +502,9 @@ form.addEventListener('submit', async event => {
 
 async function downloadFirmware(asset: Asset) {
   showStatus('active', 'Downloading release firmware')
-  progress.setAttribute('aria-label', 'Firmware download progress')
+  setProgressLabel('Firmware download progress')
   showProgress(0)
-  writeLog(`Downloading ${asset.name} (${asset.size} bytes)\nDownload 0%\n`)
+  writeLog(`${t('Downloading {name} ({size} bytes)', { name: asset.name, size: asset.size })}\n${t('Download {percent}%', { percent: 0 })}\n`)
   const response = await fetch(`${import.meta.env.BASE_URL}releases/${asset.path}`, { signal: AbortSignal.timeout(120000) })
   if (!response.ok) throw new Error('Firmware download failed. Reload the page and try again.')
   if (!response.body) throw new Error('Firmware download is unavailable. Please try again.')
@@ -446,18 +527,18 @@ async function downloadFirmware(asset: Asset) {
       const bucket = Math.floor(percentage / 10)
       if (bucket > reportedBucket) {
         reportedBucket = bucket
-        writeLog(`Download ${percentage}% · ${downloaded} / ${asset.size} bytes\n`)
+        writeLog(`${t('Download {percent}% · {received} / {total} bytes', { percent: percentage, received: downloaded, total: asset.size })}\n`)
       }
-      showStatus('active', `Downloading firmware · ${(downloaded / 1024 ** 2).toFixed(1)} / ${(asset.size / 1024 ** 2).toFixed(1)} MiB`)
+      showStatus('active', () => t('Downloading firmware · {received} / {total} MiB', { received: (downloaded / 1024 ** 2).toFixed(1), total: (asset.size / 1024 ** 2).toFixed(1) }))
     }
   } finally {
     reader.releaseLock()
   }
   if (downloaded !== asset.size) throw new Error('Firmware download is incomplete. Please try again.')
-  writeLog(`Download complete: ${downloaded} bytes. Checking SHA-256…\n`)
+  writeLog(`${t('Download complete: {size} bytes. Checking SHA-256…', { size: downloaded })}\n`)
   showStatus('active', 'Checking firmware download')
   const digest = bytesToHex(new Uint8Array(await crypto.subtle.digest('SHA-256', data)))
   if (digest !== asset.sha256) throw new Error('Firmware checksum mismatch. Reload the page and try again.')
-  writeLog(`Firmware: ${asset.name}\nSHA-256 verified.\n`)
+  writeLog(`${t('Firmware: {name}', { name: asset.name })}\n${t('SHA-256 verified.')}\n`)
   return data
 }

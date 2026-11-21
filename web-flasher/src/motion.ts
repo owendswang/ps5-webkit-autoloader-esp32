@@ -149,5 +149,6 @@ export function initMotion() {
     items.forEach(reveal)
     observer.disconnect()
   })
+  window.addEventListener('flasher:before-language', () => settleDisclosures.forEach(settle => settle()))
   html.setAttribute('data-ui-motion-ready', '')
 }

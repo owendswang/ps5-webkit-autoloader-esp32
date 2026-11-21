@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'web-flasher/**'
+      - '!web-flasher/**/*.md'
       - '.github/workflows/web-flasher.yml'
   workflow_dispatch:
   release:

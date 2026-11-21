@@ -2,9 +2,11 @@
 
 ## Introduction
 
-Install this project's PS5 WebKit Autoloader or PS4 host firmware on an ESP32-S2, ESP32-PICO, ESP32-S3 or ESP32-C3 USB dongle directly from your browser.
+Install this project's PS5 WebKit Autoloader or PS4 web host firmware on an ESP32-S2, ESP32-PICO, ESP32-S3 or ESP32-C3 USB dongle directly from your browser.
 
 [Open the web flasher](https://owendswang.github.io/ps5-webkit-autoloader-esp32/)
+
+The page uses Chinese when it is your browser's first preferred language, and English otherwise. Appearance follows your system. Use the header controls to override either preference; your choices are saved in this browser.
 
 ## Usage
 
