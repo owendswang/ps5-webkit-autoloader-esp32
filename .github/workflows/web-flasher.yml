@@ -9,9 +9,7 @@ on:
       - '.github/workflows/web-flasher.yml'
   workflow_dispatch:
   release:
-    types: [published, edited, deleted, released, prereleased]
-  schedule:
-    - cron: '17 */6 * * *'
+    types: [published, edited, deleted, released, prereleased, unpublished]
 
 concurrency:
   group: pages
