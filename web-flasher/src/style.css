@@ -141,6 +141,10 @@ html[data-theme='dark'] img.board-icon { mix-blend-mode: normal; background: var
 .board-options label:has(input:enabled):hover, .board-options label:has(input:checked) { border-color: var(--accent); }
 .board-options label:has(input:checked) { background: var(--selected-bg); color: var(--selected-ink); box-shadow: inset 0 0 0 1px var(--accent); }
 .board-options label:has(input:disabled) { cursor: default; }
+.flash-counts { margin-top: 8px; color: var(--muted); font-size: 0.75rem; line-height: 1.5; }
+.flash-counts > div { display: flex; gap: 20px; margin-top: 4px; }
+.flash-counts > div > span { display: inline-flex; align-items: baseline; gap: 8px; }
+.flash-counts [data-flash-count] { display: inline-block; width: 8ch; overflow: hidden; color: var(--accent); font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; text-overflow: ellipsis; vertical-align: bottom; }
 
 .workbench {
   min-width: 0;

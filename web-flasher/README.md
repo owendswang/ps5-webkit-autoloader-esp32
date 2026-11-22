@@ -13,7 +13,7 @@ The page uses Chinese when it is your browser's first preferred language, and En
 1. Open the web flasher in a desktop browser with Web Serial support.
 2. Select your board model. Use the hardware preview to identify it.
 3. Under **Project firmware**, select **PS5** or **PS4** and a firmware version. The latest PS5 release is selected by default.
-4. Plug the dongle directly into your computer's USB port. For **ESP32-S2**, hold **RST** while inserting, then release it. **PICO USB-to-UART** dongles have no button to press.
+4. Plug the dongle directly into your computer's USB port. For **ESP32-S2**, hold **RST** while inserting, then release it. For **ESP32-PICO**, simply plug it into your computer's USB port.
 5. Click **Flash firmware**, select the board's serial port, and keep it plugged in until **Success** appears. Errors and retry instructions appear above the progress area, with details in **Serial log**.
 
 To use your own image, choose **Local firmware**, select a `.bin` for your board and enter its write address. The default is `0x0`, and addresses must be aligned to 4 KiB. Project releases always write at `0x0`. Local files stay in your browser.
@@ -21,6 +21,7 @@ To use your own image, choose **Local firmware**, select a `.bin` for your board
 ## Credits
 
 - Firmware flashing: [Espressif esptool-js](https://github.com/espressif/esptool-js).
+- Public success counts: [Count API](https://countapi.mileshilliard.com/).
 - Checksums and compression: [noble-hashes](https://github.com/paulmillr/noble-hashes) and [pako](https://github.com/nodeca/pako).
 - Typeface: [Chivo by Omnibus-Type](https://github.com/Omnibus-Type/Chivo), distributed by [Fontsource](https://fontsource.org/fonts/chivo).
 - PS5 firmware sources: [ps5-webkit-autoloader](https://github.com/itsPLK/ps5-webkit-autoloader) and [ps5-unified-autoloader](https://github.com/owendswang/ps5-unified-autoloader).

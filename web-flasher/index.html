@@ -62,7 +62,7 @@
                   <img class="board-icon" src="/boards/esp32-s2.jpeg" alt="" width="44" height="44"><span>ESP32-S2</span>
                 </label>
                 <label>
-                  <input type="radio" name="board" value="ESP32-PICO" required data-connection="Plug the USB-to-UART dongle directly into your computer’s USB port. This model has no button to press.">
+                  <input type="radio" name="board" value="ESP32-PICO" required data-connection="Plug the dongle directly into your computer’s USB port.">
                   <img class="board-icon" src="/boards/esp32-pico.jpeg" alt="" width="44" height="44"><span>ESP32-PICO</span>
                 </label>
                 <label>
@@ -80,6 +80,10 @@
               </div>
               <p class="board-instructions" id="board-instructions" aria-live="polite">Select a model to see how to connect it.</p>
             </fieldset>
+            <div class="flash-counts" role="group" aria-label="ESP32 Successful project flashes (approx.)" data-i18n-aria="ESP32 Successful project flashes (approx.)" data-reveal-item>
+              <p data-i18n="ESP32 Successful project flashes (approx.)">ESP32 Successful project flashes (approx.)</p>
+              <div><span>PS5 <span data-flash-count="PS5">—</span></span><span>PS4 <span data-flash-count="PS4">—</span></span></div>
+            </div>
           </div>
 
           <div class="hero__media workbench" data-visual id="flasher" tabindex="-1" data-reveal-item>
@@ -153,6 +157,7 @@
               <h2 data-i18n="Web installer">Web installer</h2>
               <ul>
                 <li data-i18n="creditFlash">Firmware flashing by <a href="https://github.com/espressif/esptool-js">Espressif esptool-js</a>.</li>
+                <li data-i18n="creditCounts">Public flash counts by <a href="https://countapi.mileshilliard.com/">Count API</a>. Counts are approximate and cover project firmware only.</li>
                 <li data-i18n="creditChecksums">Checksums by <a href="https://github.com/paulmillr/noble-hashes">Paul Miller’s noble-hashes</a>, compression by <a href="https://github.com/nodeca/pako">pako</a>.</li>
                 <li data-i18n="creditTypeface">Chivo by <a href="https://github.com/Omnibus-Type/Chivo">Omnibus-Type</a>, distributed through <a href="https://fontsource.org/fonts/chivo">Fontsource</a>.</li>
                 <li data-i18n="creditInterface">Interface motion from design-taste-frontend. Hardware photographs supplied by the project maintainer.</li>

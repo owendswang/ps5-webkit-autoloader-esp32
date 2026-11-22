@@ -6,12 +6,14 @@ import installerLicense from '../LICENSE?raw'
 import { initMotion, shakeInvalid } from './motion'
 import { t } from './i18n'
 import { initPreferences } from './preferences'
+import { initFlashCounts } from './flash-counts'
 import './style.css'
 
 document.querySelector<HTMLElement>('#installer-license')!.textContent = installerLicense
 document.querySelector<HTMLAnchorElement>('#bundled-licenses')!.hidden = !import.meta.env.PROD
 initPreferences()
 initMotion()
+const beginFlashCount = initFlashCounts()
 
 const form = document.querySelector<HTMLFormElement>('#flash-form')!
 const boardPicker = document.querySelector<HTMLFieldSetElement>('#board-picker')!
@@ -384,6 +386,7 @@ form.addEventListener('submit', async event => {
   const file = source === 'local' ? firmware.files?.[0] : undefined
   const address = source === 'release' ? 0 : localAddress()
   if (address === null || (!asset && (!file?.size || !/\.bin$/i.test(file.name)))) return
+  const reportFlashCount = beginFlashCount(source === 'release' ? selectedRelease()?.platform : undefined)
 
   busy = true
   button.disabled = releasePanel.disabled = localPanel.disabled = boardPicker.disabled = releaseTab.disabled = localTab.disabled = true
@@ -453,6 +456,7 @@ form.addEventListener('submit', async event => {
       },
     })
 
+    void reportFlashCount()
     showProgress(100)
     showStatus('active', 'Restarting your board')
     try {
