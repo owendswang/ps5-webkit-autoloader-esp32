@@ -26,7 +26,7 @@
 
   function firmwareSupported() {
     if (version.console !== 5) return false;
-    if (version.major < 5 || version.major > 13) return false;
+    if (version.major < 3 || version.major > 13) return false;
     return version.major < 13 || version.minor <= 0x60;
   }
 

